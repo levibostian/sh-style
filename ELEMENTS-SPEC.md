@@ -1,6 +1,9 @@
 # Plain-Text CI Typography Spec (Bash Log Design System)
 
-This is the spec for all of the individual elements that create this design system. It doesn't necessarily tell you how to use them together to make your program look beautiful, but simply describes all the individual pieces, like headers and bullet-point lists, and the rules that define how those should be formatted. 
+This is the spec for all of the individual elements that create this design system. It doesn't
+necessarily tell you how to use them together to make your program look beautiful, but simply
+describes all the individual pieces, like headers and bullet-point lists, and the rules that define
+how those should be formatted.
 
 See [README.md](README.md) to get suggestions on how to combine these elements into a complete log.
 
@@ -14,24 +17,55 @@ See [README.md](README.md) to get suggestions on how to combine these elements i
 
 ---
 
-## Global settings
+## Global rules
 
 ### Fixed width
 
-This system uses a **fixed width** for horizontal rules and boxed errors.
+All horizontal rules and boxed elements use a fixed width `WIDTH`.
 
-- Default width: `DOC_WIDTH` (implementation default recommended: `72` or `78`)
-- Override: users can set `DOC_WIDTH=<n>` before printing.
+- `WIDTH` is configured by `DOC_WIDTH`.
+- A default width must exist in implementations.
+- `WIDTH` must be a positive integer; if invalid, fall back to default.
 
-**Definition**
-- `WIDTH := DOC_WIDTH`
-- All horizontal rules are exactly `WIDTH` characters long.
+### No truncation (ever)
+
+**No element may truncate user-provided text.**\
+If text does not fit within `WIDTH` constraints, it MUST be wrapped onto additional lines.
+
+### Character preservation
+
+When wrapping:
+
+- Preserve all characters exactly as provided (including repeated spaces).
+- Only insert `\n` where wrapping occurs.
+- Do not remove or normalize whitespace.
+- Preserve explicit newlines in input as forced line breaks (wrap lines within each segment).
+
+### Wrapping behavior (deterministic)
+
+- Prefer breaking at whitespace boundaries when possible.
+- If a single token/word is longer than the available width, hard-wrap it (split within the token)
+  to guarantee progress.
+- Wrapping must be deterministic for testability.
 
 ### Indentation
 
-- Standard indent for structured blocks: **2 spaces**
-- Warning detail indent: **4 spaces**
-- Error box body padding is handled by the box format (see below).
+- Standard structural indentation: **2 spaces**
+- Warning detail indentation: **4 spaces**
+- Wrapped line continuation: uses element-specific continuation prefixes (defined below).
+
+### Automatic whitespace (trailing blank lines)
+
+The design system automatically adds visual breathing room after most elements to ensure good typography out of the box. Users should never need to manually insert blank lines between elements.
+
+**Trailing blank line rules:**
+
+- **Elements that add 1 trailing blank line:** `title`, `phase`, `step`, `note`, `why`, `plan`, `ok`, `done`, `warn`, `error`, `kv`, `list`
+- **Elements that add NO trailing blank:** `cmd`
+
+**Rationale:**
+- Commands (`cmd`) often appear in sequences and should flow together without extra spacing
+- All other elements provide visual structure and need breathing room below them
 
 ---
 
@@ -42,9 +76,12 @@ This system uses a **fixed width** for horizontal rules and boxed errors.
 Used once at the start of a run/job.
 
 **Format**
-- 2 lines of `=` rule
-- 1 centered title line
-- 2 lines of `=` rule
+
+- Two `=` rule lines
+- One or more centered title lines (wrapping allowed)
+- Two `=` rule lines
+
+Example (single-line title):
 
 ```
 ========================================================================
@@ -52,141 +89,200 @@ Used once at the start of a run/job.
                          BUILD & TEST — api
 ========================================================================
 ========================================================================
+
+```
+
+Example (wrapped title):
+
+```
+========================================================================
+========================================================================
+                 RELEASE PIPELINE — payments-api — nightly
+                    with extended validation steps
+========================================================================
+========================================================================
+
 ```
 
 **Rules**
-- Each rule line is `=` repeated to `WIDTH`.
-- Title line is centered within `WIDTH` using spaces.
-- Title text should be short enough to fit in one line after centering.
+
+- Rule line = `=` repeated to `WIDTH`.
+- Title text is wrapped to `WIDTH` (no truncation), then each wrapped line is centered within
+  `WIDTH`.
+- Centering = left padding + text + right padding; if padding is uneven, right-pad with the
+  remainder.
+- A trailing blank line is automatically added (see "Automatic whitespace" above).
 
 ---
 
 ### 2) H1 Section (Major phase)
 
-Separates major phases like Setup / Build / Test / Deploy.
+A section divider for major phases.
 
 **Format**
+
 ```
+
 ------------------------------------------------------------------------
 ## Setup
 ------------------------------------------------------------------------
+
 ```
 
 **Rules**
-- Rule lines are `-` repeated to `WIDTH`.
-- Heading line begins with `## `.
+
+- Rule line = `-` repeated to `WIDTH`.
+- Heading begins with prefix `## `.
+- If heading wraps:
+  - First line uses `## `
+  - Continuation lines use a continuation prefix of **3 spaces** (`"   "`) so wrapped text visually
+    aligns under the heading text.
+- A trailing blank line is automatically added (see "Automatic whitespace" above).
+
+Example (wrapped):
+
+```
+
+------------------------------------------------------------------------
+## Build and package the service for production deployment
+   including generation of integrity metadata
+------------------------------------------------------------------------
+
+```
 
 ---
 
-### 3) H2 Subsection
+### 3) H2 Subsection (Step title)
 
-Subsection within a phase.
+A subsection heading within a phase.
 
 **Format**
+
 ```
+----------
 ### Install dependencies
+----------
 ```
 
 **Rules**
-- Heading line begins with `### `.
-- No surrounding rule lines.
+
+- Top rule: 10 dashes (`----------`)
+- Heading begins with prefix `### `.
+- If heading wraps:
+  - First line uses `### `
+  - Continuation lines use a continuation prefix of **4 spaces** (`"    "`).
+- Bottom rule: 10 dashes (`----------`)
+- A trailing blank line is automatically added (see "Automatic whitespace" above).
+
+Example (wrapped):
+
+```
+----------
+### Compile TypeScript and bundle server for
+    distribution
+----------
+```
 
 ---
 
-### 4) Paragraph / status lines (labels)
+### 4) Labeled single-line messages
 
-Single-line messages with stable prefixes.
+Used for short human-readable lines.
 
 **Supported labels (recommended)**
-- `NOTE: ...` (context)
-- `WHY: ...` (reason/justification)
-- `PLAN: ...` (what will happen)
-- `OK: ...` (success)
-- `DONE: ...` (end of run)
 
-**Examples**
+- `NOTE:`
+- `WHY:`
+- `PLAN:`
+- `OK:`
+- `DONE:`
+
+**Format**
+
 ```
-NOTE: Using lockfile to enforce exact versions.
-WHY: Ensure deterministic tooling across runners.
-OK: dependencies installed
-DONE: Build & Test — api
+NOTE: Using lockfile for deterministic builds.
 ```
 
-**Rules**
-- Keep these as single lines when possible.
-- Prefer ~80–100 chars max for readability in narrow CI panes.
+**Wrapping rules**
+
+- Use prefix `<LABEL>: ` (e.g. `NOTE: `).
+- Wrap the message text to fit within `WIDTH` while preserving all characters.
+- Continuation lines must use a prefix of spaces equal to the label prefix length.
+- A trailing blank line is automatically added (see "Automatic whitespace" above).
+
+Example (wrapped):
+
+```
+NOTE: This line is very long and must wrap within the fixed width while
+      preserving every character and only inserting newlines where needed.
+```
 
 ---
 
-### 5) ENV / key-value blocks
+### 5) Commands (shell commands)
 
-For versions, paths, configuration; should be easy to read and easy to assert in tests.
+Used to display commands executed by the script/program.
 
 **Format**
+
 ```
-ENV:
-  node: 20.11.1
-  pnpm: 9.1.0
-  os: ubuntu-22.04
+  $ pnpm install --frozen-lockfile
 ```
 
-**Rules**
-- Header ends with `:`
-- Keys are indented by 2 spaces and formatted as `key: value`.
+**Wrapping rules**
+
+- Prefix first line with `  $ ` (2 spaces + dollar sign + 1 space).
+- If wrapped:
+  - Continuation lines have a prefix of **4 spaces** (`"    "`) to align with the command text after
+    `  $ `.
+- NO trailing blank line is added (commands flow together in sequences).
+
+Example (wrapped):
+
+```
+  $ docker build --file Dockerfile --tag payments-api:ci --build-arg FOO=bar
+    --build-arg REALLY_LONG_ARGUMENT=somevalue .
+```
 
 ---
 
-### 6) Lists (optional)
+### 6) WARN callout
+
+High-visibility non-fatal event.
 
 **Format**
-```
-ARTIFACTS:
-  - dist/server.js
-  - dist/server.js.map
-```
 
-**Rules**
-- Use 2-space indentation before `- ` for list items under a heading.
-
----
-
-### 7) Commands (shell commands executed)
-
-Commands should be visually distinct and grep-friendly.
-
-**Format**
-```
-$ pnpm install --frozen-lockfile
-```
-
-**Rules**
-- Each executed command line starts with `$ `.
-- Multi-line commands may be continued with indentation (implementation-defined), but the first line MUST start with `$ `.
-
----
-
-### 8) WARN (high visibility, compact)
-
-Warnings must stand out without color.
-
-**Format**
 ```
 !!! WARNING: integration tests skipped
     detail: INTEGRATION=0
 ```
 
 **Rules**
-- First line starts with `!!! WARNING: `
-- Detail/continuation lines are indented **4 spaces**.
-- Use short summary line; put extra info in detail lines.
+
+- Summary line prefix: `!!! WARNING: `
+- Message wraps with continuation prefix of spaces equal to the summary prefix length.
+- Optional details are printed on following line(s).
+- Each detail line prefix: **4 spaces** (`"    "`).
+- Detail lines also wrap, using the same **4-space** continuation prefix.
+- A trailing blank line is automatically added (see "Automatic whitespace" above).
+
+Example (wrapped):
+
+```
+!!! WARNING: This warning summary is very long and must wrap while
+             preserving exact characters and spacing
+    detail: This detail line can also be long and should wrap using the
+    same 4-space indentation on continuation lines
+```
 
 ---
 
-### 9) ERROR (highest visibility, boxed)
+### 7) ERROR callout (boxed)
 
-Errors must be unmistakable in CI logs; use a fixed-width ASCII box.
+Highest-visibility fatal (or failure) event.
 
 **Format**
+
 ```
 +----------------------------------------------------------------------+
 | ERROR: deploy validation failed                                      |
@@ -197,76 +293,93 @@ Errors must be unmistakable in CI logs; use a fixed-width ASCII box.
 ```
 
 **Rules**
+
+- Box width is exactly `WIDTH`.
 - Top/bottom border:
   - `+` + (`-` repeated `WIDTH-2`) + `+`
 - Body lines:
-  - `| ` + text + padding spaces + ` |`
-- Maximum visible text width inside the box is `WIDTH-4`.
-  - If a message exceeds this, implementation should wrap or truncate consistently (choose one behavior and keep it stable).
-- Recommended fields:
-  - summary: `ERROR: ...`
-  - context: `command: ...`, `code: ...`
-  - guidance: `hint: ...` (can appear multiple times)
+  - `| ` + content padded with spaces to `(WIDTH-4)` + ` |`
+- Content is derived from zero or more input lines:
+  - The first line automatically gets the prefix `ERROR: ` prepended (similar to how WARN gets `!!! WARNING: `).
+  - Each input line may itself contain newlines; treat them as forced breaks.
+  - Each resulting line is wrapped to `INNER_WIDTH = WIDTH-4` with **no truncation**.
+- Every wrapped line becomes its own box row.
+- A trailing blank line is automatically added (see "Automatic whitespace" above).
 
----
-
-## Spacing rules
-
-- Put **one blank line** after the TITLE block.
-- Separate H1 sections with **one blank line** (optional but recommended for dense logs).
-- Within a section, use blank lines sparingly; prefer structure (H2, NOTE, ENV, etc.) over extra whitespace.
-
----
-
-## Complete example (reference)
+Example (wrapped inside box):
 
 ```
-========================================================================
-========================================================================
-                         BUILD & TEST — api
-========================================================================
-========================================================================
++----------------------------------------------------------------------+
+| ERROR: This is a long summary that wraps within the box without      |
+| truncation and keeps the box shape intact                            |
+| command: ./deploy.sh --dry-run --with-an-extremely-long-flag=VALUE   |
+| hint: This hint also wraps and remains fully visible to the user     |
++----------------------------------------------------------------------+
+```
 
-NOTE: Plain-text typography (no color, no emojis). Fixed-width layout.
+**Note**: When providing error lines, do NOT include "ERROR:" in the first line - it will be added automatically.
 
-------------------------------------------------------------------------
-## Setup
-------------------------------------------------------------------------
-WHY: Ensure deterministic tooling across runners.
+---
 
+### 8) Key-Value blocks (KV)
+
+Used for structured data such as ENV, CONTEXT, SUMMARY, METRICS, DEBUG, etc.
+
+**Format**
+
+```
 ENV:
   node: 20.11.1
   pnpm: 9.1.0
-  os: ubuntu-22.04
-
-$ corepack enable
-$ node --version
-$ pnpm --version
-OK: toolchain ready
-
-### Install dependencies
-$ pnpm install --frozen-lockfile
-OK: dependencies installed
-
-------------------------------------------------------------------------
-## Test
-------------------------------------------------------------------------
-$ pnpm test
-!!! WARNING: integration tests skipped
-    detail: INTEGRATION=0
-
-------------------------------------------------------------------------
-## Deploy
-------------------------------------------------------------------------
-$ ./scripts/deploy.sh --dry-run
-+----------------------------------------------------------------------+
-| ERROR: deploy validation failed                                      |
-| command: ./scripts/deploy.sh --dry-run                               |
-| code: 2                                                             |
-| hint: ensure DEPLOY_TOKEN is set and has permissions                 |
-| hint: rerun with VERBOSE=1 for additional diagnostics                |
-+----------------------------------------------------------------------+
-
-DONE: Build & Test — api
 ```
 
+**Rules**
+
+- Header line: `<LABEL>:` (no indentation)
+- Entries:
+  - Base prefix: `  <key>: `
+  - Value is wrapped with **no truncation**.
+  - Continuation lines are indented with spaces equal to the base prefix length (align under the
+    value start).
+- A trailing blank line is automatically added (see "Automatic whitespace" above).
+
+Example (wrapped value):
+
+```
+CONTEXT:
+  workspace: /home/runner/work/payments-api/this/path/is/so/long/it/wraps
+             /and/continues/here
+```
+
+---
+
+### 9) List blocks
+
+Used for lists such as ARTIFACTS.
+
+**Format**
+
+```
+ARTIFACTS:
+  - dist/app.tar.gz
+  - dist/checksums.txt
+```
+
+**Rules**
+
+- Header line: `<LABEL>:`
+- Items:
+  - First line prefix: `  - `
+  - Item text wraps with **no truncation**
+  - Continuation lines use spaces equal to the item prefix length (typically 4 spaces).
+- A trailing blank line is automatically added (see "Automatic whitespace" above).
+
+Example (wrapped item):
+
+```
+ARTIFACTS:
+  - dist/some/really/long/path/that/wraps/because/it/exceeds/width/and
+    continues/here
+```
+
+---

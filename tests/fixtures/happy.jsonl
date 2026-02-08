@@ -1,0 +1,29 @@
+{"command":"title","lines":["RELEASE PIPELINE — payments-api — nightly with extended validation steps"]}
+{"command":"note","lines":["Build the service, run tests, and publish artifacts for deployment while preserving exact spacing  and avoiding     truncation."]}
+{"command":"phase","lines":["Setup"]}
+{"command":"why","lines":["Ensure deterministic tooling across runners and capture enough context for reproducible failures."]}
+{"command":"kv","lines":["ENV","node: 20.11.1","pnpm: 9.1.0","os: ubuntu-22.04"]}
+{"command":"step","lines":["Enable toolchain"]}
+{"command":"cmd","lines":["corepack enable"]}
+{"command":"cmd","lines":["node --version"]}
+{"command":"cmd","lines":["pnpm --version"]}
+{"command":"ok","lines":["toolchain ready"]}
+{"command":"step","lines":["Install dependencies"]}
+{"command":"cmd","lines":["pnpm install --frozen-lockfile"]}
+{"command":"ok","lines":["dependencies installed"]}
+{"command":"phase","lines":["Build and package the service for production deployment including generation of integrity metadata"]}
+{"command":"plan","lines":["Produce production-ready output in dist/ and record artifact paths for later pipeline steps."]}
+{"command":"step","lines":["Compile TypeScript and bundle server for distribution"]}
+{"command":"cmd","lines":["pnpm run build && pnpm run bundle -- --target=node20 --sourcemap --outdir=dist --minify=false"]}
+{"command":"ok","lines":["build finished in 18s"]}
+{"command":"list","lines":["ARTIFACTS","dist/server.js","dist/server.js.map","dist/some/really/long/path/that/wraps/because/it/exceeds/width/and continues here/with  double  spaces"]}
+{"command":"phase","lines":["Test"]}
+{"command":"step","lines":["Integration tests"]}
+{"command":"cmd","lines":["pnpm run test:integration"]}
+{"command":"warn","lines":["integration tests skipped because environment is not configured for network access and the summary must wrap cleanly","detail: INTEGRATION=0","detail: network access disabled in CI for forks, see policy at https://example.com/ci/policies/network-access which is a very long line that must wrap but preserve all characters"]}
+{"command":"phase","lines":["Deploy (dry run)"]}
+{"command":"note","lines":["Validate deploy commands without publishing changes."]}
+{"command":"step","lines":["Validate deploy script"]}
+{"command":"cmd","lines":["./scripts/deploy.sh --dry-run --region=us-east-1 --service=payments-api --with-a-very-long-flag-name-that-forces-wrapping"]}
+{"command":"error","lines":["deploy validation failed because the environment variable DEPLOY_TOKEN was not set and the explanation must remain fully visible","command: ./scripts/deploy.sh --dry-run --region=us-east-1 --service=payments-api --with-a-very-long-flag-name-that-forces-wrapping","code: 2","hint: export DEPLOY_TOKEN then rerun the pipeline; do not paste secrets into logs"]}
+{"command":"kv","lines":["SUMMARY","status: failed","failed_phase: Deploy (dry run)","duration: 1m21s","artifacts: 3"]}
