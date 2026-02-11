@@ -1,11 +1,21 @@
 {
+  "name": "@levibostian/sh-style",
+  "exports": "./main.ts",
+  "publish": {
+    "include": [
+      "README.md",
+      "LICENSE",
+      "src/**/*.ts",
+      "*.ts"
+    ]
+  },
   "imports": {
     "@std/assert": "https://deno.land/std@0.224.0/assert/mod.ts"
   },
   "tasks": {
     "run": "deno run --allow-env main.ts",
     "build": "deno compile --allow-env --output log main.ts",
-    "test": "deno test --allow-env --allow-read --allow-run --coverage"
+    "test": "deno test --allow-env --allow-read --allow-run --coverage=reports/coverage/ --junit-path reports/junit.xml"
   },
   "fmt": {
     "useTabs": false,
