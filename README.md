@@ -175,6 +175,109 @@ EOF
 cat build.jsonl | log render
 ```
 
+## Using as a Library in Deno
+
+You can import and use sh-style directly in your Deno code! Two patterns are available:
+
+1. **Simple imports** - Import functions directly (uses default console logger)
+2. **Factory pattern** - Create a configured logger for custom width or logger
+
+### Installation from JSR
+
+```typescript
+// Simple imports
+import { title, phase, step, done } from "jsr:@levibostian/sh-style";
+
+// Or factory pattern
+import { createLogger } from "jsr:@levibostian/sh-style";
+```
+
+Or for local development:
+
+```typescript
+import { title, done } from "../main.ts";
+import { createLogger } from "../main.ts";
+```
+
+### Pattern 1: Simple Functions (Recommended for most use cases)
+
+Import and call functions directly. All functions automatically output to console with default width.
+
+```typescript
+import { title, phase, step, cmd, ok, done } from "jsr:@levibostian/sh-style";
+
+// Just call the functions - no configuration needed!
+title("My Build Script");
+phase("Setup");
+step("Installing dependencies");
+cmd("npm install");
+ok("Dependencies installed");
+done("Setup complete!");
+```
+
+**Available functions:**
+`title`, `phase`, `step`, `note`, `why`, `plan`, `ok`, `done`, `cmd`, `warn`, `error`, `kv`, `list`
+
+**Note:** These functions use default settings (DOC_WIDTH env variable or 72 columns, console output). For custom configuration, use the factory pattern below.
+
+### Pattern 2: Factory Pattern (For custom configuration)
+
+Create a configured logger instance when you need custom width or custom logger.
+
+```typescript
+import { createLogger } from "jsr:@levibostian/sh-style";
+
+const log = createLogger();
+
+// Call methods on the logger instance
+log.title("My Build Script");
+log.phase("Setup");
+log.done("Complete!");
+```
+
+**Custom Width:**
+
+```typescript
+const log = createLogger({ width: 50 });
+log.title("Narrow Output");
+```
+
+**Custom Logger:**
+
+Pass a custom logger that implements the standard `Logger` interface (`Pick<Console, "log">`):
+
+```typescript
+const log = createLogger({
+  logger: {
+    log: (msg: string) => {
+      // Send to file, network, or any other destination
+      Deno.writeTextFileSync("/var/log/build.log", msg + "\n", { append: true });
+    }
+  }
+});
+
+log.title("Logging to file");
+log.done("Build complete!");
+```
+
+Any object with a `log` method (including the built-in `console`) can be used as a logger.
+
+**Multiple Configurations:**
+
+```typescript
+const consoleLog = createLogger();
+const fileLog = createLogger({
+  logger: { log: (msg) => Deno.writeTextFileSync("build.log", msg + "\n", { append: true }) }
+});
+
+consoleLog.title("Console Output");
+fileLog.title("File Output");
+```
+
+### Examples
+
+See the [example directory](./example/) for complete working examples of both patterns.
+
 ## Design System
 
 A well-formed program should generally follow this structure:

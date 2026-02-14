@@ -15,7 +15,7 @@
   "tasks": {
     "run": "deno run --allow-env main.ts",
     "build": "deno compile --allow-env --output log main.ts",
-    "test": "deno test --allow-env --allow-read --allow-run --coverage=reports/coverage/ --junit-path reports/junit.xml"
+    "test": "deno test --allow-env --allow-read --allow-run --allow-write --coverage=reports/coverage/ --junit-path reports/junit.xml"
   },
   "fmt": {
     "useTabs": false,
