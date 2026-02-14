@@ -8,14 +8,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Deno
+    - name: Set up Go
       uses: asdf-vm/actions/install@v4
 
-    - name: Install dependencies
-      run: deno install --frozen
+    - name: Install gotestsum
+      run: go install gotest.tools/gotestsum@latest
 
-    - name: Run Deno tests
-      run: deno task test
+    - name: Run tests
+      run: |
+        make test-junit
 
     - name: Upload test results
       uses: actions/upload-artifact@v4

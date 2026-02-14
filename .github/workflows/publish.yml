@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up Deno
+      - name: Set up tools
         uses: asdf-vm/actions/install@v4
       
       - uses: levibostian/decaf@0.11.0
@@ -26,10 +26,13 @@ jobs:
           get_latest_release_current_branch: deno run --allow-all --quiet jsr:@levibostian/decaf-script-github-releases get
           get_next_release_version: deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits
           deploy: |
-            OUTPUT_FILE_NAME=dist/bin-x86_64-Linux DENO_TARGET=x86_64-unknown-linux-gnu deno task compile
-            OUTPUT_FILE_NAME=dist/bin-aarch64-Linux DENO_TARGET=aarch64-unknown-linux-gnu deno task compile
-            OUTPUT_FILE_NAME=dist/bin-x86_64-Darwin DENO_TARGET=x86_64-apple-darwin deno task compile
-            OUTPUT_FILE_NAME=dist/bin-aarch64-Darwin DENO_TARGET=aarch64-apple-darwin deno task compile
-            deno run --allow-all --quiet jsr:@levibostian/decaf-script-github-releases set-assets "dist/bin-x86_64-Linux" "dist/bin-aarch64-Linux" "dist/bin-x86_64-Darwin" "dist/bin-aarch64-Darwin"
-            deno run --allow-all --quiet jsr:@levibostian/decaf-script-jsr --allow-dirty
+            echo "Building all binaries and copying to destinations..."
+            make build-all
+
+            echo "Deploying Deno package..."
+            deno run --allow-all --quiet jsr:@levibostian/decaf-script-jsr --package-path ./deno --allow-dirty
+
+            echo "Publishing GitHub Release, including all compiled binaries..."
+            deno run --allow-all --quiet jsr:@levibostian/decaf-script-github-releases set-assets "dist/bin-x86_64-Linux" "dist/bin-aarch64-Linux" "dist/bin-x86_64-Darwin" "dist/bin-aarch64-Darwin" "dist/bin-x86_64-Windows.exe" "dist/bin-aarch64-Windows.exe"
+            
             deno run --allow-all --quiet jsr:@levibostian/decaf-script-github-releases set 
