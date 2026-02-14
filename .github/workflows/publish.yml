@@ -26,5 +26,10 @@ jobs:
           get_latest_release_current_branch: deno run --allow-all --quiet jsr:@levibostian/decaf-script-github-releases get
           get_next_release_version: deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits
           deploy: |
+            OUTPUT_FILE_NAME=dist/bin-x86_64-Linux DENO_TARGET=x86_64-unknown-linux-gnu deno task compile
+            OUTPUT_FILE_NAME=dist/bin-aarch64-Linux DENO_TARGET=aarch64-unknown-linux-gnu deno task compile
+            OUTPUT_FILE_NAME=dist/bin-x86_64-Darwin DENO_TARGET=x86_64-apple-darwin deno task compile
+            OUTPUT_FILE_NAME=dist/bin-aarch64-Darwin DENO_TARGET=aarch64-apple-darwin deno task compile
+            deno run --allow-all --quiet jsr:@levibostian/decaf-script-github-releases set-assets "dist/bin-x86_64-Linux" "dist/bin-aarch64-Linux" "dist/bin-x86_64-Darwin" "dist/bin-aarch64-Darwin"
             deno run --allow-all --quiet jsr:@levibostian/decaf-script-jsr --allow-dirty
             deno run --allow-all --quiet jsr:@levibostian/decaf-script-github-releases set 

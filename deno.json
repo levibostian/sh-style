@@ -14,7 +14,7 @@
   },
   "tasks": {
     "run": "deno run --allow-env main.ts",
-    "build": "deno compile --allow-env --output log main.ts",
+    "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env --target $DENO_TARGET main.ts",
     "test": "deno test --allow-env --allow-read --allow-run --allow-write --junit-path reports/junit.xml --coverage=reports/coverage/ --coverage-raw-data-only && deno coverage reports/coverage/ --include=$(pwd) && deno coverage reports/coverage/ --include=$(pwd) --lcov --output=reports/coverage.lcov"
   },
   "fmt": {
