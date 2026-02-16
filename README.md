@@ -134,23 +134,22 @@ Choose how you want to use sh-style:
 
 - **[CLI Tool](#getting-started-cli-tool)** - Use the `log` command in your shell scripts and CI pipelines
 - **[Deno Library](#getting-started-deno-library)** - Import and use sh-style directly in your Deno code
+- **[Go Library](#getting-started-go-library)** - Import and use sh-style directly in your Go programs
 
 ## Getting Started: CLI Tool
 
-A Deno CLI tool implementing the sh-style design system for plain-text CI typography.
+A CLI tool implementing the sh-style design system for plain-text CI typography.
 
 ### Installation
 
-#### Run with Deno
+#### Download binary
+
+Download a pre-built binary from the [GitHub Releases](https://github.com/levibostian/sh-style/releases) page. Binaries are available for Linux (x86_64, aarch64), macOS (x86_64, aarch64), and Windows (x86_64).
+
+#### Build from source
 
 ```bash
-deno run -A jsr:@levibostian/sh-style title "hello"
-```
-
-#### Build binary
-
-```bash
-deno task build
+go build -o log .
 ./log title "Hello World"
 ```
 
@@ -308,7 +307,7 @@ cat build.jsonl | log render
 
 ## Getting Started: Deno Library
 
-Use sh-style directly in your Deno code with two available patterns:
+Use sh-style directly in your Deno code. The Deno wrapper bundles the compiled Go binary and executes CLI commands under the hood, providing a clean TypeScript API.
 
 1. **Simple functions** - Import and call functions directly (recommended for most use cases)
 2. **Factory pattern** - Create a configured logger for custom width or output destination
@@ -321,11 +320,6 @@ import { title, phase, step, done } from "jsr:@levibostian/sh-style";
 
 // Or for factory pattern
 import { createLogger } from "jsr:@levibostian/sh-style";
-```
-
-For local development:
-```typescript
-import { title, done } from "../main.ts";
 ```
 
 ### Using Simple Functions
@@ -370,15 +364,15 @@ cmd(text: string)        // Display shell command with $ prefix
 #### Warnings & Errors
 
 ```typescript
-warn(text: string, ...details: string[])  // Warning with optional details
-error(...lines: string[])                  // Error box with multiple lines
+warn(text: string, details?: string[])     // Warning with optional details
+error(lines: string[])                      // Error box with multiple lines
 ```
 
 #### Structured Data
 
 ```typescript
-kv(label: string, ...pairs: string[])   // Key-value block (ENV, SUMMARY, etc.)
-list(label: string, ...items: string[]) // List block (ARTIFACTS, FILES, etc.)
+kv(label: string, entries: [string, string][])  // Key-value block
+list(label: string, items: string[])             // List block
 ```
 
 ### Using Factory Pattern
@@ -468,7 +462,7 @@ step("Bundle application");
 cmd("npm run bundle");
 ok("bundle created");
 
-list("ARTIFACTS", "dist/app.js", "dist/app.css");
+list("ARTIFACTS", ["dist/app.js", "dist/app.css"]);
 ```
 
 **Error handling:**
@@ -478,64 +472,281 @@ import { error } from "jsr:@levibostian/sh-style";
 try {
   // ... some operation
 } catch (e) {
-  error("Tests failed", `error: ${e.message}`, "run npm test for details");
+  error(["Tests failed", `error: ${e.message}`, "run npm test for details"]);
   Deno.exit(1);
 }
 ```
 
-**Multiple output destinations:**
-```typescript
-import { createLogger } from "jsr:@levibostian/sh-style";
+## Getting Started: Go Library
 
-const consoleLog = createLogger();
-const fileLog = createLogger({
-  logger: { 
-    log: (msg) => Deno.writeTextFileSync("build.log", msg + "\n", { append: true }) 
-  }
-});
+Use sh-style directly in your Go programs by importing the root package. The library provides both a Logger interface for structured logging and standalone functions for quick one-off formatting.
 
-consoleLog.title("Console Output");
-fileLog.title("File Output");
+### Installation
+
+```bash
+go get github.com/levibostian/sh-style
 ```
 
-### Implementation Details
+### Using the Logger Interface
 
-- Built with Deno 2
-- No external dependencies (except Deno std for tests)
-- Implements exact ELEMENTS-SPEC.md formatting rules
-- Dual-mode architecture:
-  - **CLI mode**: Direct subcommands or JSONL rendering via stdin
-  - **Library mode**: Direct function imports or factory pattern for custom config
-- Wrapping algorithm:
-  - Preserves all characters exactly
-  - Prefers whitespace breaks
-  - Hard-breaks long tokens if needed
-  - Handles explicit newlines as forced breaks
-- Exit codes: 0 (success), 1 (error)
+Create a logger instance for structured output:
+
+```go
+package main
+
+import (
+    "github.com/levibostian/sh-style"
+)
+
+func main() {
+    // Create a logger with width 72
+    logger := shstyle.NewLogger(72)
+    
+    logger.Title("My Build Script")
+    logger.Phase("Setup")
+    logger.Step("Installing dependencies")
+    logger.Cmd("go mod download")
+    logger.Ok("Dependencies installed")
+    logger.Done("Setup complete!")
+}
+```
+
+**Create logger from environment:**
+
+```go
+// Uses DOC_WIDTH env var (defaults to 72)
+logger := shstyle.NewLoggerFromEnv()
+logger.Title("My Application")
+```
+
+**Custom width:**
+
+```go
+logger := shstyle.NewLogger(50)
+logger.Title("Narrow Output")
+
+// Or change width later
+logger.SetWidth(80)
+```
+
+### Using Standalone Functions
+
+For quick one-off formatting, use the standalone functions:
+
+```go
+package main
+
+import (
+    "github.com/levibostian/sh-style"
+)
+
+func main() {
+    shstyle.Title("Quick Example")
+    shstyle.Phase("One-off formatting")
+    shstyle.Note("You can use standalone functions")
+    shstyle.Done("Example complete!")
+}
+```
+
+**With custom width:**
+
+```go
+shstyle.TitleWithWidth("Custom Width", 50)
+shstyle.PhaseWithWidth("Narrow output", 50)
+```
+
+### API Reference
+
+#### Headers
+
+```go
+logger.Title(text string)      // Document title (centered, double rules)
+logger.Phase(text string)      // H1 section (full-width rules)
+logger.Step(text string)       // H2 subsection (short rules)
+```
+
+#### Messages
+
+```go
+logger.Note(text string)       // NOTE: message
+logger.Why(text string)        // WHY: message
+logger.Plan(text string)       // PLAN: message
+logger.Ok(text string)         // OK: message
+logger.Done(text string)       // DONE: message
+```
+
+#### Commands
+
+```go
+logger.Cmd(text string)        // Display shell command with $ prefix
+```
+
+#### Warnings & Errors
+
+```go
+logger.Warn(text string, details ...string)    // Warning with optional details
+logger.Error(lines ...string)                   // Error box with multiple lines
+```
+
+#### Structured Data
+
+```go
+logger.Kv(label string, entries [][2]string)   // Key-value block
+logger.List(label string, items []string)       // List block
+```
+
+### Configuration
+
+Set the fixed width for rules and boxes using the `DOC_WIDTH` environment variable (default: 72):
+
+```go
+import "os"
+
+os.Setenv("DOC_WIDTH", "80")
+logger := shstyle.NewLoggerFromEnv()
+logger.Title("Wider output")
+```
+
+Or use explicit width:
+
+```go
+logger := shstyle.NewLogger(80)
+logger.Title("Wider output")
+```
+
+### Features
+
+- **No truncation** - all text is wrapped, never cut off
+- **Character preservation** - including repeated spaces
+- **Deterministic output** - suitable for snapshot testing
+- **Fixed-width output** - configurable via `DOC_WIDTH` or constructor
+- **Automatic spacing** - elements add appropriate whitespace automatically
+- **Zero dependencies** - pure Go implementation
+
+### Example Usage
+
+**Build script:**
+```go
+package main
+
+import (
+    "github.com/levibostian/sh-style"
+)
+
+func main() {
+    logger := shstyle.NewLogger(72)
+    
+    logger.Title("BUILD PIPELINE")
+    
+    logger.Phase("Setup")
+    logger.Cmd("go mod download")
+    logger.Ok("dependencies installed")
+    
+    logger.Phase("Build")
+    logger.Step("Compile application")
+    logger.Cmd("go build -o app .")
+    logger.Ok("build completed")
+    
+    logger.List("Artifacts", []string{
+        "app",
+        "README.md",
+        "LICENSE",
+    })
+}
+```
+
+**Environment variables:**
+```go
+logger.Kv("Build Environment", [][2]string{
+    {"GOOS", "linux"},
+    {"GOARCH", "amd64"},
+    {"CGO_ENABLED", "0"},
+})
+```
+
+**Error handling:**
+```go
+if err := runTests(); err != nil {
+    shstyle.Error("Tests failed", err.Error(), "run go test for details")
+    os.Exit(1)
+}
+```
+
+**Warnings:**
+```go
+logger.Warn("Deprecated function used", 
+    "Function 'OldAPI' is deprecated",
+    "Use 'NewAPI' instead",
+)
+```
 
 ## Development 
 
-Install deno (optionally run `asdf install` to install it). See commands in `deno.json` for build and test scripts.
+Install Go (optionally run `asdf install` to install it). 
+
+### Build
+
+Build the CLI for your current platform:
+```bash
+make build
+```
+
+Build binaries for all platforms (Linux, macOS, Windows × amd64/arm64):
+```bash
+make build-all
+```
+
+This compiles 6 binaries to `dist/` and copies them to `deno/bin/` for the Deno wrapper.
+
+### Test
+
+Run all tests:
+```bash
+make test
+```
+
+Or manually:
+```bash
+make build  # Required first
+go test -v .
+```
+
+The test suite includes:
+- **Render mode tests** - Test JSONL parsing and rendering
+- **Wrapper tests** - Test CLI, Deno, and Go wrapper consistency
+- **Error handling tests** - Test CLI argument validation
+
+All wrapper tests compare against the golden output file at `tests/expected-output.txt`.
+
+### Other Make Targets
+
+- `make clean` - Remove all built binaries
+- `make help` - Show all available targets
 
 ### Architecture
 
 ```
-main.ts             # CLI entrypoint & library exports
-src/
-  commands.ts       # Command types & JSONL parsing
-  render.ts         # Rendering functions for all elements
-  wrap.ts           # Text wrapping & formatting utilities
-  cli.ts            # Argument parsing & subcommand mapping
+shstyle.go           # Public API - standalone functions
+logger.go            # Logger type and methods
+render.go            # Rendering functions for all elements
+wrap.go              # Text wrapping & formatting utilities
+cli/
+  main.go            # CLI entrypoint
+  commands.go        # CLI argument parsing & command types
 tests/
-  cli.test.ts          # CLI argument parsing tests
-  commands.test.ts     # Command type tests
-  integration.test.ts  # E2E CLI & JSONL tests
-  lib.test.ts          # Library API tests
-  render.test.ts       # Rendering function tests
-  wrap.test.ts         # Text wrapping utility tests
+  expected-output.txt # Single source of truth for wrapper output
+  scripts/
+    test-cli.sh      # CLI wrapper test script
+    test-deno.ts     # Deno wrapper test script
+    test-go.go       # Go wrapper test script
   fixtures/
-    happy.jsonl        # Example JSONL input
-    happy.out          # Expected output
+    happy.jsonl      # Example JSONL input
+    happy.out        # Expected output
+deno/
+  mod.ts             # Deno wrapper library (execs Go binary)
+  deno.json          # JSR package config
+  scripts/
+    build-binaries.ts  # Cross-compile Go binaries for Deno wrapper
 ```
 
 ## License
