@@ -1,6 +1,7 @@
 {
   "name": "@levibostian/sh-style",
-  "exports": "./mod.ts",
+  "license": "MIT",
+  "exports": "./mod.ts",  
   "publish": {
     "include": ["README.md", "LICENSE", "mod.ts", "bin/*"]
   },
