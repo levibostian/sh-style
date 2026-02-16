@@ -11,8 +11,9 @@ jobs:
     - name: Set up Go
       uses: asdf-vm/actions/install@v4
 
+    # the go asdf plugin requires you call reshim after 'go install' to make new CLIs available in path. 
     - name: Install gotestsum
-      run: go install gotest.tools/gotestsum@latest
+      run: go install gotest.tools/gotestsum@latest && asdf reshim golang
 
     - name: Run tests
       run: |
