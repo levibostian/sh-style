@@ -133,7 +133,7 @@ DONE: RELEASE PIPELINE — payments-api
 Choose how you want to use sh-style:
 
 - **[CLI Tool](#getting-started-cli-tool)** - Use the `log` command in your shell scripts and CI pipelines
-- **[Deno Library](#getting-started-deno-library)** - Import and use sh-style directly in your Deno code
+- **[Deno, Bun, and Node.js Library](#getting-started-deno-bun-and-nodejs-library)** - Import and use sh-style directly in Deno, Node.js, or Bun
 - **[Go Library](#getting-started-go-library)** - Import and use sh-style directly in your Go programs
 
 ## Getting Started: CLI Tool
@@ -305,11 +305,11 @@ EOF
 cat build.jsonl | log render
 ```
 
-## Getting Started: Deno Library
+## Getting Started: Deno, Bun, and Node.js Library
 
-Use sh-style directly in your Deno code. The Deno wrapper bundles the compiled Go binary and executes CLI commands under the hood, providing a clean TypeScript API.
+Use sh-style directly in your Deno, Node.js, or Bun code. This cross-runtime wrapper bundles the compiled Go binary and executes CLI commands under the hood, providing a clean TypeScript API that works across all major JavaScript runtimes.
 
-See the [Deno Library documentation](deno/README.md) for installation, usage examples, and API reference.
+See the [Deno, Bun, and Node.js Library documentation](deno/README.md) for installation, usage examples, and API reference.
 
 ## Getting Started: Go Library
 

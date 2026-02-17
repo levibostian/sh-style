@@ -1,12 +1,14 @@
 /**
  * @module
- * Deno wrapper for sh-style — a plain-text design system for CLI and CI output.
+ * Cross-runtime wrapper for sh-style — a plain-text design system for CLI and CI output.
  *
  * This module bundles the compiled Go binary and executes it as a subprocess,
- * providing the same library API as the original Deno implementation.
+ * providing the same library API across Deno, Node.js, and Bun.
  */
 
-import { dirname, fromFileUrl, join } from "jsr:@std/path@1";
+import { CurrentOS, CurrentArchitecture } from "@cross/runtime";
+import { getAllEnv } from "@cross/env";
+import process from "node:process"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,15 +47,14 @@ export interface LoggerInstance {
 // ---------------------------------------------------------------------------
 
 function getBinaryPath(): string {
-  const mod = dirname(fromFileUrl(import.meta.url));
-  const os = Deno.build.os; // "darwin" | "linux" | "windows"
-  const arch = Deno.build.arch; // "x86_64" | "aarch64"
+  const os = CurrentOS; // "windows" | "linux" | "macos"
+  const arch = CurrentArchitecture; // "x86_64" | "arm64" | "x86" | "arm"
 
   let goOs: string;
   let goArch: string;
 
   switch (os) {
-    case "darwin":
+    case "macos":
       goOs = "darwin";
       break;
     case "linux":
@@ -70,7 +71,7 @@ function getBinaryPath(): string {
     case "x86_64":
       goArch = "amd64";
       break;
-    case "aarch64":
+    case "arm64":
       goArch = "arm64";
       break;
     default:
@@ -78,7 +79,18 @@ function getBinaryPath(): string {
   }
 
   const ext = os === "windows" ? ".exe" : "";
-  return join(mod, "bin", `log-${goOs}-${goArch}${ext}`);
+  const binName = `log-${goOs}-${goArch}${ext}`;
+  
+  // Use URL resolution to get the binary path relative to this module
+  let binPath = new URL(`./bin/${binName}`, import.meta.url).pathname;
+  
+  // On Windows, pathname includes a leading slash before the drive letter
+  // Remove it: /C:/foo/bar -> C:/foo/bar
+  if (/^\/[A-Za-z]:/.test(binPath)) {
+    binPath = binPath.slice(1);
+  }
+  
+  return binPath;
 }
 
 // ---------------------------------------------------------------------------
@@ -87,15 +99,60 @@ function getBinaryPath(): string {
 
 function runLogSync(args: string[], env: Record<string, string>): string {
   const binPath = getBinaryPath();
+  const baseEnv = getAllEnv();
+  const allEnv: Record<string, string> = {};
+  
+  // Filter out undefined values from getAllEnv()
+  for (const [key, value] of Object.entries(baseEnv)) {
+    if (value !== undefined) {
+      allEnv[key] = value;
+    }
+  }
+  
+  // Override with custom env vars
+  Object.assign(allEnv, env);
 
-  const result = new Deno.Command(binPath, {
-    args,
-    env: { ...Deno.env.toObject(), ...env },
-    stdout: "piped",
-    stderr: "piped",
-  }).outputSync();
-
-  return new TextDecoder().decode(result.stdout).replace(/\n$/, "");
+  // Runtime-specific synchronous command execution
+  // @ts-ignore: Deno global
+  if (typeof Deno !== 'undefined') {
+    // Deno runtime
+    // @ts-ignore: Deno.Command
+    const result = new Deno.Command(binPath, {
+      args,
+      env: allEnv,
+      stdout: "piped",
+      stderr: "piped",
+    }).outputSync();
+    return new TextDecoder().decode(result.stdout).replace(/\n$/, "");
+  } 
+  // @ts-ignore: Bun global
+  else if (typeof Bun !== 'undefined') {
+    // Bun runtime
+    // @ts-ignore: Bun.spawnSync
+    const result = Bun.spawnSync([binPath, ...args], {
+      env: allEnv,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    return result.stdout.toString().replace(/\n$/, "");
+  } 
+  // @ts-ignore: process global
+  else if (typeof process !== 'undefined') {
+    // Node.js runtime
+    // Dynamic import for Node.js child_process
+    // @ts-ignore: require
+    const { spawnSync } = require('child_process');
+    const result = spawnSync(binPath, args, {
+      env: allEnv,
+      encoding: 'utf-8',
+    });
+    if (result.error) {
+      throw result.error;
+    }
+    return (result.stdout || '').replace(/\n$/, "");
+  } else {
+    throw new Error('Unsupported runtime');
+  }
 }
 
 // ---------------------------------------------------------------------------

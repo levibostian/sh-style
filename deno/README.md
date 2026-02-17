@@ -1,6 +1,6 @@
-# sh-style Deno Library
+# sh-style for Deno, Bun, and Node.js
 
-Use sh-style directly in your Deno code. The Deno wrapper bundles the compiled Go binary and executes CLI commands under the hood, providing a clean TypeScript API.
+Use sh-style directly in your Deno, Node.js, or Bun code. This cross-runtime wrapper bundles the compiled Go binary and executes CLI commands under the hood, providing a clean TypeScript API that works across all major JavaScript runtimes.
 
 ## Usage Patterns
 
@@ -9,12 +9,29 @@ Use sh-style directly in your Deno code. The Deno wrapper bundles the compiled G
 
 ## Installation
 
+This package is published to JSR (JavaScript Registry), which works across all runtimes.
+
+**For Deno:**
+```bash
+deno add jsr:@levibostian/sh-style
+```
+
+**For Node.js:**
+```bash
+npx jsr add @levibostian/sh-style
+```
+
+**For Bun:**
+```bash
+bunx jsr add @levibostian/sh-style
+```
+
+Then import in your code:
 ```typescript
-// Import from JSR
-import { title, phase, step, done } from "jsr:@levibostian/sh-style";
+import { title, phase, step, done } from "@levibostian/sh-style";
 
 // Or for factory pattern
-import { createLogger } from "jsr:@levibostian/sh-style";
+import { createLogger } from "@levibostian/sh-style";
 ```
 
 ## Using Simple Functions
@@ -95,6 +112,7 @@ log.title("Narrow Output");
 
 Pass a custom logger that implements the standard `Logger` interface (`Pick<Console, "log">`):
 
+**Deno:**
 ```typescript
 const log = createLogger({
   logger: {
@@ -109,18 +127,61 @@ log.title("Logging to file");
 log.done("Build complete!");
 ```
 
+**Node.js:**
+```typescript
+import { writeFileSync } from 'fs';
+
+const log = createLogger({
+  logger: {
+    log: (msg: string) => {
+      writeFileSync("/var/log/build.log", msg + "\n", { flag: 'a' });
+    }
+  }
+});
+
+log.title("Logging to file");
+log.done("Build complete!");
+```
+
+**Bun:**
+```typescript
+const log = createLogger({
+  logger: {
+    log: (msg: string) => {
+      Bun.write(Bun.file("/var/log/build.log"), msg + "\n");
+    }
+  }
+});
+
+log.title("Logging to file");
+log.done("Build complete!");
+```
+
 Any object with a `log` method (including the built-in `console`) can be used as a logger.
 
 ## Configuration
 
 Set the fixed width for rules and boxes using the `DOC_WIDTH` environment variable (default: 72):
 
+**Deno:**
 ```typescript
 Deno.env.set("DOC_WIDTH", "80");
 title("Wider output");
 ```
 
-Or use the factory pattern with explicit width:
+**Node.js:**
+```typescript
+process.env.DOC_WIDTH = "80";
+title("Wider output");
+```
+
+**Bun:**
+```typescript
+process.env.DOC_WIDTH = "80";
+title("Wider output");
+```
+
+Or use the factory pattern with explicit width (works in all runtimes):
 
 ```typescript
 const log = createLogger({ width: 80 });
@@ -129,6 +190,7 @@ log.title("Wider output");
 
 ## Features
 
+- **Cross-runtime support** - Works seamlessly in Deno, Node.js, and Bun
 - **No truncation** - all text is wrapped, never cut off
 - **Character preservation** - including repeated spaces
 - **Deterministic output** - suitable for snapshot testing
