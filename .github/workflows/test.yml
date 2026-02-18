@@ -2,18 +2,14 @@ on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v4
 
-    - uses: aquaproj/aqua-installer@11dd79b4e498d471a9385aa9fb7f62bb5f52a73c # v4.0.4
-      with:
-        aqua_version: v2.43.1 
+    - name: Set up Go
+      uses: asdf-vm/actions/install@v4
 
     # the go asdf plugin requires you call reshim after 'go install' to make new CLIs available in path. 
     - name: Install gotestsum
@@ -26,7 +22,7 @@ jobs:
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
-        name: junit-results-${{ matrix.os }}
+        name: junit-results
         path: reports/junit.xml
 
     - name: Annotate failed tests

@@ -516,7 +516,7 @@ logger.Warn("Deprecated function used",
 
 ## Development 
 
-Install Go (optionally run `aqua i` to install it). 
+Install Go (optionally run `asdf install` to install it). 
 
 ### Build
 
