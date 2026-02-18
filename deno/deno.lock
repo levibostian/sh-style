@@ -1,0 +1,30 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@cross/deepmerge@1": "1.0.0",
+    "jsr:@cross/env@^1.0.3": "1.0.3",
+    "jsr:@cross/runtime@1": "1.2.1",
+    "jsr:@cross/runtime@^1.2.1": "1.2.1"
+  },
+  "jsr": {
+    "@cross/deepmerge@1.0.0": {
+      "integrity": "1e1318a74e31ba1959b9aa0acae8bd417b806f74ffd25ac07c90e12f83ad6b1d"
+    },
+    "@cross/env@1.0.3": {
+      "integrity": "218d2dd68bec55cf047d1670a8bddc304b9c011a8ad22e647afa916bb796c8b4",
+      "dependencies": [
+        "jsr:@cross/deepmerge",
+        "jsr:@cross/runtime@1"
+      ]
+    },
+    "@cross/runtime@1.2.1": {
+      "integrity": "f462fcf2fd678f9073291b4e55209b90f58c8d508764a84205d178abdcf22fc9"
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@cross/env@^1.0.3",
+      "jsr:@cross/runtime@^1.2.1"
+    ]
+  }
+}

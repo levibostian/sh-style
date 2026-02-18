@@ -87,7 +87,7 @@ func TestGoWrapper(t *testing.T) {
 
 // TestDenoWrapper tests that the Deno wrapper produces expected output
 func TestDenoWrapper(t *testing.T) {
-	cmd := exec.Command("./scripts/test-deno.ts")
+	cmd := exec.Command("deno", "run", "--allow-all", "--config=../deno/deno.json", "scripts/test-deno.ts")
 	output, err := cmd.Output()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {

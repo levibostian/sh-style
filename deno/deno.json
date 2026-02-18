@@ -7,7 +7,8 @@
     "exclude": ["!bin"]
   },
   "imports": {
-    "@std/path": "jsr:@std/path@^1"
+    "@cross/runtime": "jsr:@cross/runtime@^1.2.1",
+    "@cross/env": "jsr:@cross/env@^1.0.3"
   },
   "fmt": {
     "useTabs": false,
@@ -19,5 +20,9 @@
     "rules": {
       "tags": ["recommended"]
     }
+  },
+  "lock": {
+    "path": "./deno.lock",
+    "frozen": true
   }
 }
