@@ -3,7 +3,7 @@
   "license": "MIT",
   "exports": "./mod.ts",  
   "publish": {
-    "include": ["mod.ts", "bin/**"],
+    "include": ["mod.ts", "bin/**", "README.md"],
     "exclude": ["!bin"]
   },
   "imports": {
