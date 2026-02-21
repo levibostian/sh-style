@@ -3,12 +3,15 @@
   "license": "MIT",
   "exports": "./mod.ts",  
   "publish": {
-    "include": ["mod.ts", "bin/**", "README.md"],
-    "exclude": ["!bin"]
+    "include": ["mod.ts", "version.ts", "README.md"]
   },
   "imports": {
     "@cross/runtime": "jsr:@cross/runtime@^1.2.1",
-    "@cross/env": "jsr:@cross/env@^1.0.3"
+    "@cross/env": "jsr:@cross/env@^1.0.3",
+    "@cross/fs/stat": "jsr:@cross/fs@^0.1.14/stat",
+    "@cross/fs/io": "jsr:@cross/fs@^0.1.14/io",
+    "@cross/fs/ops": "jsr:@cross/fs@^0.1.14/ops",
+    "@cross/utils/spawn": "jsr:@cross/utils@^0.16.0/spawn"
   },
   "fmt": {
     "useTabs": false,

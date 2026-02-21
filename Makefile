@@ -1,4 +1,4 @@
-.PHONY: build build-all clean test help
+.PHONY: build build-all clean test help test-deno-cache-install
 
 # Default target
 .DEFAULT_GOAL := help
@@ -9,7 +9,9 @@ CGO := CGO_ENABLED=0
 
 # Output directories
 DIST_DIR := dist
-DENO_BIN_DIR := deno/bin
+
+# Deno test cache: installs local binary as version "dev"
+DENO_CACHE_DIR := $(HOME)/.cache/sh-style/dev
 
 help: ## Show this help message
 	@echo "Available targets:"
@@ -17,12 +19,10 @@ help: ## Show this help message
 
 clean: ## Remove all built binaries
 	rm -rf $(DIST_DIR)
-	rm -rf $(DENO_BIN_DIR)
 
-build-all: ## Build binaries for all platforms and copy to all destinations
+build-all: ## Build binaries for all platforms
 	@echo "Building binaries for all platforms..."
 	@mkdir -p $(DIST_DIR)
-	@mkdir -p $(DENO_BIN_DIR)
 	
 	@echo "  - linux/amd64"
 	@$(CGO) GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(DIST_DIR)/bin-x86_64-Linux ./cli
@@ -45,17 +45,6 @@ build-all: ## Build binaries for all platforms and copy to all destinations
 	@echo "Building for current platform for convenience with tests..."
 	@make build
 	
-	@echo "Copying binaries to Deno wrapper..."
-	@cp $(DIST_DIR)/bin-x86_64-Linux $(DENO_BIN_DIR)/log-linux-amd64
-	@cp $(DIST_DIR)/bin-aarch64-Linux $(DENO_BIN_DIR)/log-linux-arm64
-	@cp $(DIST_DIR)/bin-x86_64-Darwin $(DENO_BIN_DIR)/log-darwin-amd64
-	@cp $(DIST_DIR)/bin-aarch64-Darwin $(DENO_BIN_DIR)/log-darwin-arm64
-	@cp $(DIST_DIR)/bin-x86_64-Windows.exe $(DENO_BIN_DIR)/log-windows-amd64.exe
-	@cp $(DIST_DIR)/bin-aarch64-Windows.exe $(DENO_BIN_DIR)/log-windows-arm64.exe
-	
-	@echo "Setting execute permissions..."
-	@chmod +x $(DENO_BIN_DIR)/log-*
-	
 	@echo "Build complete!"
 
 build: ## Build binary for current platform only (faster for local development)
@@ -63,13 +52,34 @@ build: ## Build binary for current platform only (faster for local development)
 	@go build -o log ./cli
 	@echo "Build complete: ./log"
 
-test: build-all ## Run all tests (builds all binaries first)
+test-deno-cache-install: build ## Build local binary and install into Deno test cache (version: dev)
+	@echo "Installing local binary into Deno test cache at $(DENO_CACHE_DIR)..."
+	@mkdir -p $(DENO_CACHE_DIR)
+	@GOOS=$$(go env GOOS); GOARCH=$$(go env GOARCH); \
+	case "$$GOOS" in \
+	  darwin) OS="Darwin" ;; \
+	  linux)  OS="Linux"  ;; \
+	  windows) OS="Windows" ;; \
+	  *) echo "Unsupported OS: $$GOOS"; exit 1 ;; \
+	esac; \
+	case "$$GOARCH" in \
+	  amd64) ARCH="x86_64"  ;; \
+	  arm64) ARCH="aarch64" ;; \
+	  *) echo "Unsupported arch: $$GOARCH"; exit 1 ;; \
+	esac; \
+	EXT=""; if [ "$$GOOS" = "windows" ]; then EXT=".exe"; fi; \
+	ASSET="bin-$${ARCH}-$${OS}$${EXT}"; \
+	cp log $(DENO_CACHE_DIR)/$$ASSET; \
+	chmod +x $(DENO_CACHE_DIR)/$$ASSET; \
+	echo "Installed: $(DENO_CACHE_DIR)/$$ASSET"
+
+test: build-all test-deno-cache-install ## Run all tests (builds all binaries and installs Deno test cache first)
 	@echo "Running integration tests..."
 	@go test -v .
 	@echo ""
 	@echo "Running wrapper tests..."
-	@go test -v ./tests/
+	@BINARY_VERSION=dev go test -v ./tests/
 
-test-junit: build-all
+test-junit: build-all test-deno-cache-install
 	@mkdir -p reports
-	@gotestsum --junitfile reports/junit.xml -- -v . ./tests/
+	@BINARY_VERSION=dev gotestsum --junitfile reports/junit.xml -- -v . ./tests/
