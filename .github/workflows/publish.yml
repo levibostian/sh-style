@@ -28,7 +28,6 @@ jobs:
           deploy: |
             make build-all
 
-            # Update version.json to point to the new release version before publishing to JSR
             jq '.version = "{{ nextVersionName }}"' deno/version.json > deno/version.json.tmp && mv deno/version.json.tmp deno/version.json
             cat deno/version.json
             
