@@ -3,7 +3,7 @@
   "license": "MIT",
   "exports": "./mod.ts",  
   "publish": {
-    "include": ["mod.ts", "version.ts", "README.md"]
+    "include": ["mod.ts", "version.json", "README.md"]
   },
   "imports": {
     "@cross/runtime": "jsr:@cross/runtime@^1.2.1",

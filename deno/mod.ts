@@ -26,7 +26,8 @@ import { getAllEnv, getEnv } from "@cross/env"
 import { exists } from "@cross/fs/stat"
 import { writeFile } from "@cross/fs/io"
 import { mkdir, chmod } from "@cross/fs/ops"
-import { BINARY_VERSION } from "./version.ts"
+import versionJson from "./version.json" with { type: "json" }
+const BINARY_VERSION = versionJson.version
 
 // ---------------------------------------------------------------------------
 // Constants
