@@ -181,6 +181,7 @@ log step <text...>       # H2 subsection (short rules)
 #### Messages
 
 ```bash
+log msg  <text...>       # Plain paragraph (no prefix)
 log note <text...>       # NOTE: message
 log why <text...>        # WHY: message
 log plan <text...>       # PLAN: message
@@ -228,6 +229,7 @@ cat events.jsonl | log render
 {"command":"title","lines":["My Title"]}
 {"command":"phase","lines":["Setup"]}
 {"command":"step","lines":["Install dependencies"]}
+{"command":"msg","lines":["Plain paragraph text with no label prefix."]}
 {"command":"note","lines":["Starting process..."]}
 {"command":"cmd","lines":["npm install"]}
 {"command":"ok","lines":["build completed"]}
@@ -238,7 +240,7 @@ cat events.jsonl | log render
 ```
 
 **Format rules:**
-- Simple commands (`title`, `phase`, `step`, `note`, `why`, `plan`, `ok`, `done`, `cmd`): `lines[0]` is the text
+- Simple commands (`title`, `phase`, `step`, `msg`, `note`, `why`, `plan`, `ok`, `done`, `cmd`): `lines[0]` is the text
 - `warn`: `lines[0]` is warning text, `lines[1..]` are optional details
 - `error`: `lines[0..]` are all error lines
 - `kv`: `lines[0]` is label, `lines[1..]` are "key: value" pairs
@@ -402,6 +404,7 @@ logger.Step(text string)       // H2 subsection (short rules)
 #### Messages
 
 ```go
+logger.Msg(text string)        // Plain paragraph (no prefix)
 logger.Note(text string)       // NOTE: message
 logger.Why(text string)        // WHY: message
 logger.Plan(text string)       // PLAN: message

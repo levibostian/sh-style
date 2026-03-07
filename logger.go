@@ -97,3 +97,8 @@ func (l *Logger) Kv(label string, entries [][2]string) {
 func (l *Logger) List(label string, items []string) {
 	fmt.Print(RenderList(label, items, l.width))
 }
+
+// Msg renders plain text wrapped to width with no prefix.
+func (l *Logger) Msg(text string) {
+	fmt.Print(RenderMsg(text, l.width))
+}

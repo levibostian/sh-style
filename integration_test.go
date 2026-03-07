@@ -631,3 +631,32 @@ func TestCLIListWithoutLabel(t *testing.T) {
 	}
 	assertContains(t, stderr, "Error: list command requires a label")
 }
+
+func TestCLIMsg(t *testing.T) {
+	output := runCommand(t, "msg", "Hello, world!")
+	assertEqual(t, output, "Hello, world!\n\n")
+}
+
+func TestCLIMsgMultiWord(t *testing.T) {
+	output := runCommand(t, "msg", "This", "is", "a", "plain", "message.")
+	assertEqual(t, output, "This is a plain message.\n\n")
+}
+
+func TestRenderModeMsg(t *testing.T) {
+	testJsonl := `{"command":"msg","lines":["Plain paragraph text."]}`
+	output := runRender(t, testJsonl)
+	assertEqual(t, output, "Plain paragraph text.\n\n")
+}
+
+func TestRenderModeMsgWraps(t *testing.T) {
+	// A message that exceeds 72 chars should wrap
+	testJsonl := `{"command":"msg","lines":["This is a fairly long plain message that should wrap because it exceeds the configured width of seventy-two characters."]}`
+	output := runRender(t, testJsonl)
+	expected := strings.Join([]string{
+		"This is a fairly long plain message that should wrap because it exceeds",
+		"the configured width of seventy-two characters.",
+		"",
+		"",
+	}, "\n")
+	assertEqual(t, output, expected)
+}

@@ -125,6 +125,12 @@ func RenderList(label string, items []string, width int) string {
 	return strings.Join(parts, "\n") + "\n\n"
 }
 
+// RenderMsg renders plain text wrapped to width, with no prefix.
+func RenderMsg(text string, width int) string {
+	lines, _ := WrapPreserve(text, width)
+	return strings.Join(lines, "\n") + "\n\n"
+}
+
 // wrapWithPrefix wraps text with a first-line prefix and continuation prefix.
 func wrapWithPrefix(text string, firstPrefix string, contPrefix string, width int) []string {
 	firstWidth := width - len(firstPrefix)

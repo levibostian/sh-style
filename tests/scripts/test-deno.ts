@@ -4,6 +4,7 @@
 import {
   createLogger,
   title,
+  msg,
   note,
   phase,
   why,
@@ -23,6 +24,7 @@ await createLogger()
 
 // Run all commands in sequence to generate the expected output
 title("RELEASE PIPELINE — payments-api — nightly with extended validation steps")
+msg("This pipeline will build, test, and deploy the payments-api service.")
 note("Build the service, run tests, and publish artifacts for deployment while preserving exact spacing  and avoiding     truncation.")
 phase("Setup")
 why("Ensure deterministic tooling across runners and capture enough context for reproducible failures.")

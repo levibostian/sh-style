@@ -74,7 +74,7 @@ func ParseCommand(jsonStr string) *Command {
 	}
 
 	switch cmdStr {
-	case "title", "phase", "step", "note", "why", "plan", "ok", "done", "cmd":
+	case "title", "phase", "step", "note", "why", "plan", "ok", "done", "cmd", "msg":
 		return &Command{Type: cmdStr, Text: lines[0]}
 	case "warn":
 		cmd := &Command{Type: "warn", Text: lines[0]}
@@ -132,6 +132,8 @@ func RenderCommand(cmd *Command, width int) string {
 		return shstyle.RenderKv(cmd.Label, cmd.Entries, width)
 	case "list":
 		return shstyle.RenderList(cmd.Label, cmd.Items, width)
+	case "msg":
+		return shstyle.RenderMsg(cmd.Text, width)
 	default:
 		return ""
 	}
@@ -155,7 +157,7 @@ func ParseArgs(args []string) *Command {
 	case "render":
 		// Signal to main that render mode should be used
 		return &Command{Type: "render"}
-	case "title", "phase", "step", "note", "why", "plan", "ok", "done", "cmd":
+	case "title", "phase", "step", "note", "why", "plan", "ok", "done", "cmd", "msg":
 		return &Command{Type: command, Text: strings.Join(rest, " ")}
 	case "warn":
 		return parseWarn(rest)
@@ -254,6 +256,7 @@ COMMANDS:
   title <text>                     Top-level banner
   phase <text>                     Major section heading
   step  <text>                     Sub-section heading
+  msg   <text>                     Plain paragraph (no prefix)
   note  <text>                     Informational note (NOTE: prefix)
   why   <text>                     Rationale note (WHY: prefix)
   plan  <text>                     Plan note (PLAN: prefix)
@@ -273,6 +276,7 @@ ENVIRONMENT:
 EXAMPLES:
   log title "Deploy Pipeline"
   log phase "Build"
+  log msg "This is a plain paragraph with no prefix."
   log cmd "npm install"
   log ok "build complete"
   log warn "flaky test" --detail "test_login timed out"

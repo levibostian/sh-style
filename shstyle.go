@@ -168,3 +168,13 @@ func List(label string, items []string) {
 func ListWithWidth(label string, items []string, width int) {
 	fmt.Print(RenderList(label, items, width))
 }
+
+// Msg renders plain text wrapped to width with no prefix, using the default width.
+func Msg(text string) {
+	fmt.Print(RenderMsg(text, getDefaultWidth()))
+}
+
+// MsgWithWidth renders plain text wrapped to width with no prefix, using the specified width.
+func MsgWithWidth(text string, width int) {
+	fmt.Print(RenderMsg(text, width))
+}

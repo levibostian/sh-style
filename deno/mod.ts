@@ -61,6 +61,7 @@ export interface LoggerInstance {
   title(text: string): void
   phase(text: string): void
   step(text: string): void
+  msg(text: string): void
   note(text: string): void
   why(text: string): void
   plan(text: string): void
@@ -268,6 +269,7 @@ export async function createLogger(config?: LoggerConfig): Promise<LoggerInstanc
     title: (text: string) => exec(["title", text]),
     phase: (text: string) => exec(["phase", text]),
     step: (text: string) => exec(["step", text]),
+    msg: (text: string) => exec(["msg", text]),
     note: (text: string) => exec(["note", text]),
     why: (text: string) => exec(["why", text]),
     plan: (text: string) => exec(["plan", text]),
@@ -320,6 +322,7 @@ function execDefault(args: string[]): void {
 export const title = (text: string): void => execDefault(["title", text])
 export const phase = (text: string): void => execDefault(["phase", text])
 export const step = (text: string): void => execDefault(["step", text])
+export const msg = (text: string): void => execDefault(["msg", text])
 export const note = (text: string): void => execDefault(["note", text])
 export const why = (text: string): void => execDefault(["why", text])
 export const plan = (text: string): void => execDefault(["plan", text])
