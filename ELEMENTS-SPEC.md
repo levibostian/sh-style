@@ -60,7 +60,7 @@ The design system automatically adds visual breathing room after most elements t
 
 **Trailing blank line rules:**
 
-- **Elements that add 1 trailing blank line:** `title`, `phase`, `step`, `note`, `why`, `plan`, `ok`, `done`, `warn`, `error`, `kv`, `list`
+- **Elements that add 1 trailing blank line:** `title`, `phase`, `step`, `msg`, `note`, `why`, `plan`, `ok`, `done`, `warn`, `error`, `kv`, `list`
 - **Elements that add NO trailing blank:** `cmd`
 
 **Rationale:**
@@ -380,6 +380,32 @@ Example (wrapped item):
 ARTIFACTS:
   - dist/some/really/long/path/that/wraps/because/it/exceeds/width/and
     continues/here
+```
+
+---
+
+### 10) MSG (Plain paragraph)
+
+Used to output arbitrary plain text — like a paragraph in HTML. Identical to `note` except no prefix string is added.
+
+**Format**
+
+```
+This is some plain text that will be wrapped to the configured width.
+```
+
+**Rules**
+
+- No prefix on any line.
+- Text is wrapped to `WIDTH` (no truncation), preserving all characters.
+- Continuation lines have no indent; each wrapped line starts at column 1.
+- A trailing blank line is automatically added (see "Automatic whitespace" above).
+
+Example (wrapped):
+
+```
+This is a fairly long plain message that should wrap because it exceeds
+the configured width of seventy-two characters.
 ```
 
 ---

@@ -8,6 +8,7 @@ LOG_BIN="${1:-./log}"
 
 # Run all commands in sequence to generate the expected output
 "$LOG_BIN" title "RELEASE PIPELINE — payments-api — nightly with extended validation steps"
+"$LOG_BIN" msg "This pipeline will build, test, and deploy the payments-api service."
 "$LOG_BIN" note "Build the service, run tests, and publish artifacts for deployment while preserving exact spacing  and avoiding     truncation."
 "$LOG_BIN" phase "Setup"
 "$LOG_BIN" why "Ensure deterministic tooling across runners and capture enough context for reproducible failures."
