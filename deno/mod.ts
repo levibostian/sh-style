@@ -9,6 +9,13 @@
 import { CurrentOS, CurrentArchitecture } from "@cross/runtime";
 import { getAllEnv } from "@cross/env";
 import process from "node:process"
+// imports only for Deno to download the binaries when it downloads from jsr. 
+import _binMac64 from "./bin/log-darwin-amd64" with { type: "bytes" };
+import _binMacArm from "./bin/log-darwin-arm64" with { type: "bytes" };
+import _binLinux64 from "./bin/log-linux-amd64" with { type: "bytes" };
+import _binLinuxArm from "./bin/log-linux-arm64" with { type: "bytes" };
+import _binWindows64 from "./bin/log-windows-amd64.exe" with { type: "bytes" };
+import _binWindowsArm from "./bin/log-windows-arm64.exe" with { type: "bytes" };
 
 // ---------------------------------------------------------------------------
 // Types
