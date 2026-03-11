@@ -42,23 +42,23 @@ list("ARTIFACTS", [
   "dist/server.js",
   "dist/server.js.map",
   "dist/some/really/long/path/that/wraps/because/it/exceeds/width/and continues here/with  double  spaces",
-]);
-phase("Test");
-step("Integration tests");
-cmd("pnpm run test:integration");
+])
+phase("Test")
+step("Integration tests")
+cmd("pnpm run test:integration")
 warn("integration tests skipped because environment is not configured for network access and the summary must wrap cleanly", [
   "detail: INTEGRATION=0",
   "detail: network access disabled in CI for forks, see policy at https://example.com/ci/policies/network-access which is a very long line that must wrap but preserve all characters",
-]);
-phase("Deploy (dry run)");
-note("Validate deploy commands without publishing changes.");
-step("Validate deploy script");
-cmd("./scripts/deploy.sh --dry-run --region=us-east-1 --service=payments-api --with-a-very-long-flag-name-that-forces-wrapping");
+])
+phase("Deploy (dry run)")
+note("Validate deploy commands without publishing changes.")
+step("Validate deploy script")
+cmd("./scripts/deploy.sh --dry-run --region=us-east-1 --service=payments-api --with-a-very-long-flag-name-that-forces-wrapping")
 error([
   "deploy validation failed because the environment variable DEPLOY_TOKEN was not set and the explanation must remain fully visible",
   "command: ./scripts/deploy.sh --dry-run --region=us-east-1 --service=payments-api --with-a-very-long-flag-name-that-forces-wrapping",
   "code: 2",
   "hint: export DEPLOY_TOKEN then rerun the pipeline; do not paste secrets into logs",
-]);
-kv("SUMMARY", [["status", "failed"], ["failed_phase", "Deploy (dry run)"], ["duration", "1m21s"], ["artifacts", "3"]]);
-done("RELEASE PIPELINE — payments-api");
+])
+kv("SUMMARY", [["status", "failed"], ["failed_phase", "Deploy (dry run)"], ["duration", "1m21s"], ["artifacts", "3"]])
+done("RELEASE PIPELINE — payments-api")
