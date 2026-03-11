@@ -27,6 +27,6 @@ jobs:
           get_next_release_version: deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits
           deploy: |
             make build-all
-            deno run --allow-all --quiet jsr:@levibostian/decaf-script-jsr --package-path ./deno --allow-dirty
+            deno run --allow-all --quiet jsr:@levibostian/decaf-script-jsr --package-path ./deno --allow-dirty --unstable-raw-imports
             deno run --allow-all --quiet jsr:@levibostian/decaf-script-github-releases set-assets "dist/bin-x86_64-Linux" "dist/bin-aarch64-Linux" "dist/bin-x86_64-Darwin" "dist/bin-aarch64-Darwin" "dist/bin-x86_64-Windows.exe" "dist/bin-aarch64-Windows.exe"
             deno run --allow-all --quiet jsr:@levibostian/decaf-script-github-releases set 
