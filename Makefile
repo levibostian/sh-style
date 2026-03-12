@@ -55,6 +55,9 @@ build-all: ## Build binaries for all platforms and copy to all destinations
 	
 	@echo "Setting execute permissions..."
 	@chmod +x $(DENO_BIN_DIR)/log-*
+
+	@echo "Encoding binaries to base64 for Deno wrapper..."
+	@./deno/scripts/bin-to-base64.ts
 	
 	@echo "Build complete!"
 
