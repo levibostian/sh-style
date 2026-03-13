@@ -1,77 +1,28 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@cross/deepmerge@1": "1.0.0",
-    "jsr:@cross/dir@^1.1.0": "1.1.0",
-    "jsr:@cross/env@1": "1.0.3",
+    "jsr:@cross/deepmerge@1": "1.0.1",
     "jsr:@cross/env@^1.0.3": "1.0.3",
-    "jsr:@cross/fs@~0.1.14": "0.1.14",
-    "jsr:@cross/runtime@1": "1.2.1",
-    "jsr:@cross/runtime@^1.2.1": "1.2.1",
-    "jsr:@cross/utils@0.16": "0.16.0",
-    "jsr:@cross/utils@0.7": "0.7.1",
-    "jsr:@std/internal@^1.0.12": "1.0.12",
-    "jsr:@std/path@^1.0.8": "1.1.4"
+    "jsr:@cross/runtime@1": "1.2.1"
   },
   "jsr": {
-    "@cross/deepmerge@1.0.0": {
-      "integrity": "1e1318a74e31ba1959b9aa0acae8bd417b806f74ffd25ac07c90e12f83ad6b1d"
-    },
-    "@cross/dir@1.1.0": {
-      "integrity": "41eb779daf160f53bc33ef91f593f332fffc52ec9b81f87178db564718534e59",
-      "dependencies": [
-        "jsr:@cross/env@1",
-        "jsr:@cross/runtime@1",
-        "jsr:@cross/utils@0.7"
-      ]
+    "@cross/deepmerge@1.0.1": {
+      "integrity": "7a224229f1a463087d62cef8729d26263ed4f5e3c2f2bfec64fc0a16a9dbc754"
     },
     "@cross/env@1.0.3": {
       "integrity": "218d2dd68bec55cf047d1670a8bddc304b9c011a8ad22e647afa916bb796c8b4",
       "dependencies": [
         "jsr:@cross/deepmerge",
-        "jsr:@cross/runtime@1"
-      ]
-    },
-    "@cross/fs@0.1.14": {
-      "integrity": "d59c53ef26e02d1d0369b0bcf1d01dbac89ef2fbc938c00ae9d8e7ed281ae96b",
-      "dependencies": [
-        "jsr:@cross/dir",
-        "jsr:@cross/env@1",
-        "jsr:@cross/runtime@1",
-        "jsr:@std/path"
+        "jsr:@cross/runtime"
       ]
     },
     "@cross/runtime@1.2.1": {
       "integrity": "f462fcf2fd678f9073291b4e55209b90f58c8d508764a84205d178abdcf22fc9"
-    },
-    "@cross/utils@0.7.1": {
-      "integrity": "6cc50ad31b0904364188c43d10e3d4888d817a3d415528b014c27deb8a35564e",
-      "dependencies": [
-        "jsr:@cross/runtime@1"
-      ]
-    },
-    "@cross/utils@0.16.0": {
-      "integrity": "c6333cafd9be41a04c449655120989b8f3601322f7344db30f9d00eef7bc942f",
-      "dependencies": [
-        "jsr:@cross/runtime@1"
-      ]
-    },
-    "@std/internal@1.0.12": {
-      "integrity": "972a634fd5bc34b242024402972cd5143eac68d8dffaca5eaa4dba30ce17b027"
-    },
-    "@std/path@1.1.4": {
-      "integrity": "1d2d43f39efb1b42f0b1882a25486647cb851481862dc7313390b2bb044314b5",
-      "dependencies": [
-        "jsr:@std/internal"
-      ]
     }
   },
   "workspace": {
     "dependencies": [
-      "jsr:@cross/env@^1.0.3",
-      "jsr:@cross/fs@~0.1.14",
-      "jsr:@cross/runtime@^1.2.1",
-      "jsr:@cross/utils@0.16"
+      "jsr:@cross/env@^1.0.3"
     ]
   }
 }

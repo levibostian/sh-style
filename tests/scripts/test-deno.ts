@@ -2,7 +2,6 @@
 // Test script for Deno library - generates the same output as expected-output.txt
 
 import {
-  createLogger,
   title,
   msg,
   note,
@@ -17,10 +16,7 @@ import {
   warn,
   error,
   done,
-} from "../../deno/mod.ts"
-
-// Initialise: ensures binary is downloaded/cached before using sync functions
-await createLogger()
+} from "../../deno/mod.ts";
 
 // Run all commands in sequence to generate the expected output
 title("RELEASE PIPELINE — payments-api — nightly with extended validation steps")

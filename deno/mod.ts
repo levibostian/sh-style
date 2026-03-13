@@ -2,44 +2,24 @@
  * @module
  * Cross-runtime wrapper for sh-style — a plain-text design system for CLI and CI output.
  *
- * This module downloads the compiled Go binary from GitHub Releases on first use,
- * caches it at ~/.cache/sh-style/<version>/, and executes it as a subprocess,
- * providing the same library API across Deno, Node.js, and Bun.
+ * This module bundles the compiled Go binary as base64 strings, extracts the
+ * appropriate binary for the current OS/architecture to the OS cache directory,
+ * and executes it as a subprocess — providing the same library API across
+ * Deno, Node.js, and Bun.
  *
- * **Important**: You must call and await `createLogger()` once before using any
- * top-level functions. This ensures the binary is downloaded and cached.
- *
- * @example
- * ```ts
- * import { createLogger, title, phase, done } from "@levibostian/sh-style";
- *
- * await createLogger(); // download/verify binary once
- *
- * title("My Build Script");
- * phase("Setup");
- * done("Complete!");
- * ```
+ * Architecture at this moment:
+ * - The goal of this entire project is that there is a CLI and then a collection of wrappers created for various languages/runtimes. So this code is meant to be small and simply focused around a great public API and then running the CLI under the hood.
+ * - Ideally, we don't need a lot of runtime permissions for Deno. jsr does allow you to include binary files which requires you to use syntax:
+ * `import _binMac64 from "./bin/log-darwin-amd64" with { type: "bytes" };`
+ * Which forces Deno to download the binary from jsr. Deno only downloads files that it imports. But, jsr does not allow you to use this syntax until: https://github.com/denoland/deno/issues/29904 has been resolved.
+ * - I looked into compiling the Go code to webassembly and then running it in Deno using the WebAssembly APIs. But Deno currently doesn't implement the "node:wasi" module so we can't run it in Deno. https://github.com/denoland/deno/pull/32413 is trying to add this feature in.
  */
 
-import { CurrentOS, CurrentArchitecture } from "@cross/runtime"
-import { getAllEnv, getEnv } from "@cross/env"
-import { exists } from "@cross/fs/stat"
-import { writeFile } from "@cross/fs/io"
-import { mkdir, chmod } from "@cross/fs/ops"
-import versionJson from "./version.json" with { type: "json" }
-const BINARY_VERSION = versionJson.version
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const GITHUB_REPO = "levibostian/sh-style"
-
-// ---------------------------------------------------------------------------
-// Module-level binary path (set once by createLogger)
-// ---------------------------------------------------------------------------
-
-let resolvedBinaryPath: string | undefined
+import { getAllEnv } from "@cross/env"
+import process from "node:process"
+import bins from "./bin/bin.ts"
+import * as fs from "node:fs"
+import { spawnSync } from "node:child_process"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -75,152 +55,105 @@ export interface LoggerInstance {
 }
 
 // ---------------------------------------------------------------------------
-// Binary resolution
+// Cache directory resolution
 // ---------------------------------------------------------------------------
 
-/**
- * Returns the GitHub release asset name for the current platform.
- * Asset names follow the pattern: bin-<arch>-<OS>[.exe]
- * e.g. bin-aarch64-Darwin, bin-x86_64-Linux, bin-x86_64-Windows.exe
- */
-function getAssetName(): string {
-  const os = CurrentOS // "windows" | "linux" | "macos"
-  const arch = CurrentArchitecture // "x86_64" | "arm64" | "x86" | "arm"
+// Use a cache directory so we don't have to extract the binary on every run.
+// We have the ability to write it once and then reuse it for performance gains.
+function getCacheDir(): string {
+  const platform = process.platform
+  if (platform === "darwin") {
+    const home = process.env["HOME"] ?? "/tmp"
+    return `${home}/Library/Caches/sh-style`
+  } else if (platform === "win32") {
+    const localAppData = process.env["LOCALAPPDATA"] ?? process.env["TEMP"] ?? "C:\\Temp"
+    return `${localAppData}\\sh-style`
+  } else {
+    const home = process.env["HOME"] ?? "/tmp"
+    return `${home}/.cache/sh-style`
+  }
+}
 
-  let releaseOs: string
-  let releaseArch: string
+// ---------------------------------------------------------------------------
+// Binary extraction
+// ---------------------------------------------------------------------------
 
-  switch (os) {
-    case "macos":
-      releaseOs = "Darwin"
-      break
-    case "linux":
-      releaseOs = "Linux"
-      break
-    case "windows":
-      releaseOs = "Windows"
-      break
-    default:
-      throw new Error(`Unsupported OS: ${os}`)
+/** Module-level cache so we only resolve the path once per process. */
+let cachedBinPath: string | undefined
+
+function getBinaryPath(): string {
+  if (cachedBinPath !== undefined) {
+    return cachedBinPath
   }
 
+  const platform = process.platform // "darwin" | "linux" | "win32"
+  const arch = process.arch // "x64" | "arm64" | "ia32" | ...
+
+  let goOs: string
+  switch (platform) {
+    case "darwin":
+      goOs = "darwin"
+      break
+    case "linux":
+      goOs = "linux"
+      break
+    case "win32":
+      goOs = "windows"
+      break
+    default:
+      throw new Error(`Unsupported OS: ${platform}`)
+  }
+
+  let goArch: string
   switch (arch) {
-    case "x86_64":
-      releaseArch = "x86_64"
+    case "x64":
+      goArch = "amd64"
       break
     case "arm64":
-      releaseArch = "aarch64"
+      goArch = "arm64"
       break
     default:
       throw new Error(`Unsupported architecture: ${arch}`)
   }
 
-  const ext = os === "windows" ? ".exe" : ""
-  return `bin-${releaseArch}-${releaseOs}${ext}`
-}
+  const ext = goOs === "windows" ? ".exe" : ""
+  const binName = `log-${goOs}-${goArch}${ext}`
 
-/**
- * Returns the local cache path for the binary.
- * Cache location: ~/.cache/sh-style/<version>/<assetName>
- * The version can be overridden by the BINARY_VERSION env var (used in tests to point at a local build).
- */
-function getCachePath(assetName: string): string {
-  const home = getEnv("HOME")
-  if (!home) {
-    throw new Error("HOME environment variable is not set")
-  }
-  // Allow env var override so tests can inject a locally built binary (e.g. BINARY_VERSION=dev)
-  const version = getEnv("BINARY_VERSION") || BINARY_VERSION
-  const cacheDir = `${home}/.cache/sh-style/${version}`
-  return `${cacheDir}/${assetName}`
-}
-
-/**
- * Ensures the binary exists in cache, downloading it from GitHub Releases if needed.
- * Returns the path to the cached binary.
- */
-async function ensureBinary(): Promise<string> {
-  const assetName = getAssetName()
-  const cachePath = getCachePath(assetName)
-
-  if (await exists(cachePath)) {
-    return cachePath
+  const base64 = bins[binName]
+  if (!base64) {
+    throw new Error(`No embedded binary found for ${binName}`)
   }
 
-  const cacheDir = cachePath.substring(0, cachePath.lastIndexOf("/"))
-  await mkdir(cacheDir, { recursive: true })
+  const cacheDir = getCacheDir()
+  const sep = goOs === "windows" ? "\\" : "/"
+  const binPath = `${cacheDir}${sep}${binName}`
 
-  const version = getEnv("BINARY_VERSION") || BINARY_VERSION
-  const url = `https://github.com/${GITHUB_REPO}/releases/download/${version}/${assetName}`
-
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(
-      `Failed to download sh-style binary from ${url}: HTTP ${response.status} ${response.statusText}`,
-    )
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true })
+    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
+    fs.writeFileSync(binPath, bytes, { encoding: "utf8", mode: 0o755 })
   }
 
-  const data = await response.arrayBuffer()
-  await writeFile(cachePath, new Uint8Array(data))
-  await chmod(cachePath, 0o755)
+  cachedBinPath = binPath
 
-  return cachePath
+  return binPath
 }
 
 // ---------------------------------------------------------------------------
-// Subprocess execution (synchronous per-runtime)
+// Subprocess execution
 // ---------------------------------------------------------------------------
 
-function runLogSync(binPath: string, args: string[], env: Record<string, string>): string {
-  const baseEnv = getAllEnv()
-  const allEnv: Record<string, string> = {}
+function runLogSync(args: string[], env: Record<string, string>): string {
+  const binPath = getBinaryPath()
 
-  // Filter out undefined values from getAllEnv()
-  for (const [key, value] of Object.entries(baseEnv)) {
-    if (value !== undefined) {
-      allEnv[key] = value
-    }
+  const result = spawnSync(binPath, args, {
+    env,
+    encoding: "utf-8",
+  })
+  if (result.error) {
+    throw result.error
   }
-
-  // Override with custom env vars
-  Object.assign(allEnv, env)
-
-  // @ts-ignore: Deno global
-  if (typeof Deno !== "undefined") {
-    // @ts-ignore: Deno.Command
-    const result = new Deno.Command(binPath, {
-      args,
-      env: allEnv,
-      stdout: "piped",
-      stderr: "piped",
-    }).outputSync()
-    return new TextDecoder().decode(result.stdout).replace(/\n$/, "")
-  }
-  // @ts-ignore: Bun global
-  else if (typeof Bun !== "undefined") {
-    // @ts-ignore: Bun.spawnSync
-    const result = Bun.spawnSync([binPath, ...args], {
-      env: allEnv,
-      stdout: "pipe",
-      stderr: "pipe",
-    })
-    return result.stdout.toString().replace(/\n$/, "")
-  }
-  // @ts-ignore: process global
-  else if (typeof process !== "undefined") {
-    // @ts-ignore: require
-    const { spawnSync } = require("child_process")
-    const result = spawnSync(binPath, args, {
-      env: allEnv,
-      encoding: "utf-8",
-    })
-    if (result.error) {
-      throw result.error
-    }
-    return (result.stdout || "").replace(/\n$/, "")
-  } else {
-    throw new Error("Unsupported runtime")
-  }
+  return (result.stdout || "").replace(/\n$/, "")
 }
 
 // ---------------------------------------------------------------------------
@@ -228,27 +161,12 @@ function runLogSync(binPath: string, args: string[], env: Record<string, string>
 // ---------------------------------------------------------------------------
 
 /**
- * Initialise sh-style: ensures the binary is downloaded and cached, then
- * returns a configured logger instance.
- *
- * **This must be awaited once before calling any top-level functions.**
- * You may discard the returned value if you only use the top-level functions.
+ * Create a logger instance that executes the `log` CLI binary under the hood.
  *
  * @param config Optional configuration for width and output target.
- * @returns A LoggerInstance with synchronous methods for every sh-style element.
- *
- * @example
- * ```ts
- * await createLogger(); // initialise (download binary if needed)
- *
- * title("My Build Script");
- * phase("Setup");
- * done("Complete!");
- * ```
+ * @returns A LoggerInstance with methods for every sh-style element.
  */
-export async function createLogger(config?: LoggerConfig): Promise<LoggerInstance> {
-  resolvedBinaryPath = await ensureBinary()
-
+export function createLogger(config?: LoggerConfig): LoggerInstance {
   const logger: Logger = config?.logger ?? console
   const env: Record<string, string> = {}
   if (config?.width !== undefined) {
@@ -256,10 +174,7 @@ export async function createLogger(config?: LoggerConfig): Promise<LoggerInstanc
   }
 
   function exec(args: string[]): void {
-    if (!resolvedBinaryPath) {
-      throw new Error("sh-style: binary not ready. Await createLogger() before using logger functions.")
-    }
-    const output = runLogSync(resolvedBinaryPath, args, env)
+    const output = runLogSync(args, env)
     if (output) {
       logger.log(output)
     }
@@ -298,54 +213,24 @@ export async function createLogger(config?: LoggerConfig): Promise<LoggerInstanc
 }
 
 // ---------------------------------------------------------------------------
-// Top-level sync convenience functions
+// Default logger + convenience exports
 // ---------------------------------------------------------------------------
 
-/**
- * Returns the module-level binary path, throwing a clear error if
- * createLogger() has not been awaited yet.
- */
-function getBinaryPath(): string {
-  if (!resolvedBinaryPath) {
-    throw new Error("sh-style: binary not ready. Await createLogger() before using logger functions.")
-  }
-  return resolvedBinaryPath
-}
+const defaultLogger = createLogger()
 
-function execDefault(args: string[]): void {
-  const output = runLogSync(getBinaryPath(), args, {})
-  if (output) {
-    console.log(output)
-  }
-}
-
-export const title = (text: string): void => execDefault(["title", text])
-export const phase = (text: string): void => execDefault(["phase", text])
-export const step = (text: string): void => execDefault(["step", text])
-export const msg = (text: string): void => execDefault(["msg", text])
-export const note = (text: string): void => execDefault(["note", text])
-export const why = (text: string): void => execDefault(["why", text])
-export const plan = (text: string): void => execDefault(["plan", text])
-export const ok = (text: string): void => execDefault(["ok", text])
-export const done = (text: string): void => execDefault(["done", text])
-export const cmd = (text: string): void => execDefault(["cmd", text])
-export const warn = (text: string, details?: string[]): void => {
-  const args = ["warn", text]
-  if (details) {
-    for (const d of details) {
-      args.push("--detail", d)
-    }
-  }
-  execDefault(args)
-}
-export const error = (lines: string[]): void => execDefault(["error", ...lines])
-export const kv = (label: string, entries: [string, string][]): void => {
-  const args = ["kv", label]
-  for (const [k, v] of entries) {
-    args.push(`${k}=${v}`)
-  }
-  execDefault(args)
-}
-export const list = (label: string, items: string[]): void => execDefault(["list", label, ...items])
+export const title = (text: string): void => defaultLogger.title(text)
+export const phase = (text: string): void => defaultLogger.phase(text)
+export const step = (text: string): void => defaultLogger.step(text)
+export const msg = (text: string): void => defaultLogger.msg(text)
+export const note = (text: string): void => defaultLogger.note(text)
+export const why = (text: string): void => defaultLogger.why(text)
+export const plan = (text: string): void => defaultLogger.plan(text)
+export const ok = (text: string): void => defaultLogger.ok(text)
+export const done = (text: string): void => defaultLogger.done(text)
+export const cmd = (text: string): void => defaultLogger.cmd(text)
+export const warn = (text: string, details?: string[]): void => defaultLogger.warn(text, details)
+export const error = (lines: string[]): void => defaultLogger.error(lines)
+export const kv = (label: string, entries: [string, string][]): void => defaultLogger.kv(label, entries)
+export const list = (label: string, items: string[]): void => defaultLogger.list(label, items)
 
 export default createLogger
