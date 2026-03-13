@@ -39,6 +39,10 @@ import { done, phase, step, title } from "@levibostian/sh-style"
 import { createLogger } from "@levibostian/sh-style"
 ```
 
+> Note: For Deno users, this module currently requires `--allow-read`, `--allow-write`, `--allow-run`, and `--allow-env` permissions.
+> Future versions may be able to remove these permissions, but because of some limitations to Deno's runtime, it's
+> currently required. Permissions are required to write a CLI program to your system's cache directory.
+
 ## Using Simple Functions
 
 Import and call functions directly. All functions automatically output to console.

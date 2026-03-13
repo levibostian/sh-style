@@ -2,20 +2,24 @@
  * @module
  * Cross-runtime wrapper for sh-style — a plain-text design system for CLI and CI output.
  *
- * This module bundles the compiled Go binary and executes it as a subprocess,
- * providing the same library API across Deno, Node.js, and Bun.
+ * This module bundles the compiled Go binary as base64 strings, extracts the
+ * appropriate binary for the current OS/architecture to the OS cache directory,
+ * and executes it as a subprocess — providing the same library API across
+ * Deno, Node.js, and Bun.
+ *
+ * Architecture at this moment:
+ * - The goal of this entire project is that there is a CLI and then a collection of wrappers created for various languages/runtimes. So this code is meant to be small and simply focused around a great public API and then running the CLI under the hood.
+ * - Ideally, we don't need a lot of runtime permissions for Deno. jsr does allow you to include binary files which requires you to use syntax:
+ * `import _binMac64 from "./bin/log-darwin-amd64" with { type: "bytes" };`
+ * Which forces Deno to download the binary from jsr. Deno only downloads files that it imports. But, jsr does not allow you to use this syntax until: https://github.com/denoland/deno/issues/29904 has been resolved.
+ * - I looked into compiling the Go code to webassembly and then running it in Deno using the WebAssembly APIs. But Deno currently doesn't implement the "node:wasi" module so we can't run it in Deno. https://github.com/denoland/deno/pull/32413 is trying to add this feature in.
  */
 
-import { CurrentArchitecture, CurrentOS } from "@cross/runtime"
 import { getAllEnv } from "@cross/env"
 import process from "node:process"
-// imports only for Deno to download the binaries when it downloads from jsr.
-import _binMac64 from "./bin/log-darwin-amd64" with { type: "bytes" }
-import _binMacArm from "./bin/log-darwin-arm64" with { type: "bytes" }
-import _binLinux64 from "./bin/log-linux-amd64" with { type: "bytes" }
-import _binLinuxArm from "./bin/log-linux-arm64" with { type: "bytes" }
-import _binWindows64 from "./bin/log-windows-amd64.exe" with { type: "bytes" }
-import _binWindowsArm from "./bin/log-windows-arm64.exe" with { type: "bytes" }
+import bins from "./bin/bin.ts"
+import * as fs from "node:fs"
+import { spawnSync } from "node:child_process"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,32 +55,58 @@ export interface LoggerInstance {
 }
 
 // ---------------------------------------------------------------------------
-// Binary resolution
+// Cache directory resolution
 // ---------------------------------------------------------------------------
 
+// Use a cache directory so we don't have to extract the binary on every run.
+// We have the ability to write it once and then reuse it for performance gains.
+function getCacheDir(): string {
+  const platform = process.platform
+  if (platform === "darwin") {
+    const home = process.env["HOME"] ?? "/tmp"
+    return `${home}/Library/Caches/sh-style`
+  } else if (platform === "win32") {
+    const localAppData = process.env["LOCALAPPDATA"] ?? process.env["TEMP"] ?? "C:\\Temp"
+    return `${localAppData}\\sh-style`
+  } else {
+    const home = process.env["HOME"] ?? "/tmp"
+    return `${home}/.cache/sh-style`
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Binary extraction
+// ---------------------------------------------------------------------------
+
+/** Module-level cache so we only resolve the path once per process. */
+let cachedBinPath: string | undefined
+
 function getBinaryPath(): string {
-  const os = CurrentOS // "windows" | "linux" | "macos"
-  const arch = CurrentArchitecture // "x86_64" | "arm64" | "x86" | "arm"
+  if (cachedBinPath !== undefined) {
+    return cachedBinPath
+  }
+
+  const platform = process.platform // "darwin" | "linux" | "win32"
+  const arch = process.arch // "x64" | "arm64" | "ia32" | ...
 
   let goOs: string
-  let goArch: string
-
-  switch (os) {
-    case "macos":
+  switch (platform) {
+    case "darwin":
       goOs = "darwin"
       break
     case "linux":
       goOs = "linux"
       break
-    case "windows":
+    case "win32":
       goOs = "windows"
       break
     default:
-      throw new Error(`Unsupported OS: ${os}`)
+      throw new Error(`Unsupported OS: ${platform}`)
   }
 
+  let goArch: string
   switch (arch) {
-    case "x86_64":
+    case "x64":
       goArch = "amd64"
       break
     case "arm64":
@@ -86,17 +116,25 @@ function getBinaryPath(): string {
       throw new Error(`Unsupported architecture: ${arch}`)
   }
 
-  const ext = os === "windows" ? ".exe" : ""
+  const ext = goOs === "windows" ? ".exe" : ""
   const binName = `log-${goOs}-${goArch}${ext}`
 
-  // Use URL resolution to get the binary path relative to this module
-  let binPath = new URL(`./bin/${binName}`, import.meta.url).pathname
-
-  // On Windows, pathname includes a leading slash before the drive letter
-  // Remove it: /C:/foo/bar -> C:/foo/bar
-  if (/^\/[A-Za-z]:/.test(binPath)) {
-    binPath = binPath.slice(1)
+  const base64 = bins[binName]
+  if (!base64) {
+    throw new Error(`No embedded binary found for ${binName}`)
   }
+
+  const cacheDir = getCacheDir()
+  const sep = goOs === "windows" ? "\\" : "/"
+  const binPath = `${cacheDir}${sep}${binName}`
+
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true })
+    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
+    fs.writeFileSync(binPath, bytes, { encoding: "utf8", mode: 0o755 })
+  }
+
+  cachedBinPath = binPath
 
   return binPath
 }
@@ -107,58 +145,15 @@ function getBinaryPath(): string {
 
 function runLogSync(args: string[], env: Record<string, string>): string {
   const binPath = getBinaryPath()
-  const baseEnv = getAllEnv()
-  const allEnv: Record<string, string> = {}
 
-  // Filter out undefined values from getAllEnv()
-  for (const [key, value] of Object.entries(baseEnv)) {
-    if (value !== undefined) {
-      allEnv[key] = value
-    }
+  const result = spawnSync(binPath, args, {
+    env,
+    encoding: "utf-8",
+  })
+  if (result.error) {
+    throw result.error
   }
-
-  // Override with custom env vars
-  Object.assign(allEnv, env)
-
-  // Runtime-specific synchronous command execution
-  // @ts-ignore: Deno global
-  if (typeof Deno !== "undefined") {
-    // Deno runtime
-    // @ts-ignore: Deno.Command
-    const result = new Deno.Command(binPath, {
-      args,
-      env: allEnv,
-      stdout: "piped",
-      stderr: "piped",
-    }).outputSync()
-    return new TextDecoder().decode(result.stdout).replace(/\n$/, "")
-  } // @ts-ignore: Bun global
-  else if (typeof Bun !== "undefined") {
-    // Bun runtime
-    // @ts-ignore: Bun.spawnSync
-    const result = Bun.spawnSync([binPath, ...args], {
-      env: allEnv,
-      stdout: "pipe",
-      stderr: "pipe",
-    })
-    return result.stdout.toString().replace(/\n$/, "")
-  } // @ts-ignore: process global
-  else if (typeof process !== "undefined") {
-    // Node.js runtime
-    // Dynamic import for Node.js child_process
-    // @ts-ignore: require
-    const { spawnSync } = require("child_process")
-    const result = spawnSync(binPath, args, {
-      env: allEnv,
-      encoding: "utf-8",
-    })
-    if (result.error) {
-      throw result.error
-    }
-    return (result.stdout || "").replace(/\n$/, "")
-  } else {
-    throw new Error("Unsupported runtime")
-  }
+  return (result.stdout || "").replace(/\n$/, "")
 }
 
 // ---------------------------------------------------------------------------
