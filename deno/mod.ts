@@ -17,7 +17,12 @@
 
 import { getAllEnv } from "@cross/env"
 import process from "node:process"
-import bins from "./bin/bin.ts"
+import binDarwinAmd64 from "./bin/log-darwin-amd64.ts"
+import binDarwinArm64 from "./bin/log-darwin-arm64.ts"
+import binLinuxAmd64 from "./bin/log-linux-amd64.ts"
+import binLinuxArm64 from "./bin/log-linux-arm64.ts"
+import binWindowsAmd64 from "./bin/log-windows-amd64.exe.ts"
+import binWindowsArm64 from "./bin/log-windows-arm64.exe.ts"
 import * as fs from "node:fs"
 import { spawnSync } from "node:child_process"
 
@@ -119,7 +124,16 @@ function getBinaryPath(): string {
   const ext = goOs === "windows" ? ".exe" : ""
   const binName = `log-${goOs}-${goArch}${ext}`
 
-  const base64 = bins[binName]
+  const binMap: Record<string, string> = {
+    "log-darwin-amd64": binDarwinAmd64,
+    "log-darwin-arm64": binDarwinArm64,
+    "log-linux-amd64": binLinuxAmd64,
+    "log-linux-arm64": binLinuxArm64,
+    "log-windows-amd64.exe": binWindowsAmd64,
+    "log-windows-arm64.exe": binWindowsArm64,
+  }
+
+  const base64 = binMap[binName]
   if (!base64) {
     throw new Error(`No embedded binary found for ${binName}`)
   }
