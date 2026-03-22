@@ -6,6 +6,9 @@ RELEASE PIPELINE — payments-api — nightly with extended validation steps
  
 This pipeline will build, test, and deploy the payments-api service.
  
+(this line is intentionally here to test that empty lines are preserved
+in the output and that the spacing is exactly as expected.)
+ 
 NOTE: Build the service, run tests, and publish artifacts for deployment
       while preserving exact spacing  and avoiding     truncation.
  

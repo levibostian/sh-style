@@ -11,7 +11,9 @@ func main() {
 
 	// Run all commands in sequence to generate the expected output
 	logger.Title("RELEASE PIPELINE — payments-api — nightly with extended validation steps")
-	logger.Msg("This pipeline will build, test, and deploy the payments-api service.")
+	logger.Msg(`This pipeline will build, test, and deploy the payments-api service.
+
+(this line is intentionally here to test that empty lines are preserved in the output and that the spacing is exactly as expected.)`)
 	logger.Note("Build the service, run tests, and publish artifacts for deployment while preserving exact spacing  and avoiding     truncation.")
 	logger.Phase("Setup")
 	logger.Why("Ensure deterministic tooling across runners and capture enough context for reproducible failures.")
