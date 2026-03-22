@@ -3,68 +3,68 @@
 RELEASE PIPELINE — payments-api — nightly with extended validation steps
 ========================================================================
 ========================================================================
-
+ 
 NOTE: Build the service, run tests, and publish artifacts for deployment
       while preserving exact spacing  and avoiding     truncation.
-
+ 
 ------------------------------------------------------------------------
 ## Setup
 ------------------------------------------------------------------------
-
+ 
 WHY: Ensure deterministic tooling across runners and capture enough
      context for reproducible failures.
-
+ 
 ENV:
   node: 20.11.1
   pnpm: 9.1.0
   os: ubuntu-22.04
-
+ 
 ----------
 ### Enable toolchain
 ----------
-
+ 
   $ corepack enable
   $ node --version
   $ pnpm --version
 OK: toolchain ready
-
+ 
 ----------
 ### Install dependencies
 ----------
-
+ 
   $ pnpm install --frozen-lockfile
 OK: dependencies installed
-
+ 
 ------------------------------------------------------------------------
 ## Build and package the service for production deployment including
    generation of integrity metadata
 ------------------------------------------------------------------------
-
+ 
 PLAN: Produce production-ready output in dist/ and record artifact paths
       for later pipeline steps.
-
+ 
 ----------
 ### Compile TypeScript and bundle server for distribution
 ----------
-
+ 
   $ pnpm run build && pnpm run bundle -- --target=node20 --sourcemap
     --outdir=dist --minify=false
 OK: build finished in 18s
-
+ 
 ARTIFACTS:
   - dist/server.js
   - dist/server.js.map
   - dist/some/really/long/path/that/wraps/because/it/exceeds/width/and
     continues here/with  double  spaces
-
+ 
 ------------------------------------------------------------------------
 ## Test
 ------------------------------------------------------------------------
-
+ 
 ----------
 ### Integration tests
 ----------
-
+ 
   $ pnpm run test:integration
 !!! WARNING: integration tests skipped because environment is not
              configured for network access and the summary must wrap
@@ -73,17 +73,17 @@ ARTIFACTS:
     detail: network access disabled in CI for forks, see policy at
     https://example.com/ci/policies/network-access which is a very long
     line that must wrap but preserve all characters
-
+ 
 ------------------------------------------------------------------------
 ## Deploy (dry run)
 ------------------------------------------------------------------------
-
+ 
 NOTE: Validate deploy commands without publishing changes.
-
+ 
 ----------
 ### Validate deploy script
 ----------
-
+ 
   $ ./scripts/deploy.sh --dry-run --region=us-east-1
     --service=payments-api
     --with-a-very-long-flag-name-that-forces-wrapping
@@ -98,10 +98,10 @@ NOTE: Validate deploy commands without publishing changes.
 | hint: export DEPLOY_TOKEN then rerun the pipeline; do not paste      |
 | secrets into logs                                                    |
 +----------------------------------------------------------------------+
-
+ 
 SUMMARY:
   status: failed
   failed_phase: Deploy (dry run)
   duration: 1m21s
   artifacts: 3
-
+ 
