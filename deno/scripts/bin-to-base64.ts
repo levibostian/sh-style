@@ -3,7 +3,7 @@
 /**
  * Reads all binary files (files without a file extension) from the ../bin/ directory,
  * converts them to base64, and writes one TypeScript module per binary to ../bin/
- * (e.g. bin/log-darwin-arm64.ts), each exporting a single default string.
+ * (e.g. bin/log-darwin-arm64.ts), each exporting an object with a hash and base64 string.
  */
 
 const scriptDir = new URL(".", import.meta.url).pathname
@@ -18,6 +18,12 @@ for await (const entry of Deno.readDir(binDir)) {
 
   const filePath = `${binDir}/${entry.name}`
   const bytes = await Deno.readFile(filePath)
+
+  // Compute SHA-256 hash of the binary and take the first 8 hex characters
+  const hashBuffer = await crypto.subtle.digest("SHA-256", bytes)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
+  const hash = hashHex.slice(0, 8)
 
   // Encode binary data to base64 using built-in btoa
   let binary = ""
@@ -36,11 +42,12 @@ for await (const entry of Deno.readDir(binDir)) {
     "// Usage:",
     `//   import bin from "./bin/${entry.name}.ts"`,
     "//",
-    "//   const bytes = Uint8Array.from(atob(bin), (c) => c.charCodeAt(0))",
+    "//   const bytes = Uint8Array.from(atob(bin.bin), (c) => c.charCodeAt(0))",
     "",
+    `const hash = "${hash}"`,
     `const bin = "${base64}"`,
     "",
-    "export default bin",
+    "export default { hash, bin }",
     "",
   ]
 

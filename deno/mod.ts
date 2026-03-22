@@ -124,7 +124,7 @@ function getBinaryPath(): string {
   const ext = goOs === "windows" ? ".exe" : ""
   const binName = `log-${goOs}-${goArch}${ext}`
 
-  const binMap: Record<string, string> = {
+  const binMap: Record<string, { hash: string; bin: string }> = {
     "log-darwin-amd64": binDarwinAmd64,
     "log-darwin-arm64": binDarwinArm64,
     "log-linux-amd64": binLinuxAmd64,
@@ -133,16 +133,21 @@ function getBinaryPath(): string {
     "log-windows-arm64.exe": binWindowsArm64,
   }
 
-  const base64 = binMap[binName]
-  if (!base64) {
+  const entry = binMap[binName]
+  if (!entry) {
     throw new Error(`No embedded binary found for ${binName}`)
   }
 
+  const { hash, bin: base64 } = entry
+
+  // Include the hash in the filename so that a new binary release always
+  // writes a fresh file rather than reusing a stale cached one.
+  const stem = goOs === "windows" ? `log-${goOs}-${goArch}-${hash}.exe` : `log-${goOs}-${goArch}-${hash}`
   const cacheDir = getCacheDir()
   const sep = goOs === "windows" ? "\\" : "/"
-  const binPath = `${cacheDir}${sep}${binName}`
+  const binPath = `${cacheDir}${sep}${stem}`
 
-  if (!fs.existsSync(cacheDir)) {
+  if (!fs.existsSync(binPath)) {
     fs.mkdirSync(cacheDir, { recursive: true })
     const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
     fs.writeFileSync(binPath, bytes, { encoding: "utf8", mode: 0o755 })
