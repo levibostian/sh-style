@@ -172,7 +172,7 @@ function runLogSync(args: string[], env: Record<string, string>): string {
   if (result.error) {
     throw result.error
   }
-  return (result.stdout || "").replace(/\n$/, "")
+  return (result.stdout || "")
 }
 
 // ---------------------------------------------------------------------------
@@ -195,7 +195,13 @@ export function createLogger(config?: LoggerConfig): LoggerInstance {
   function exec(args: string[]): void {
     const output = runLogSync(args, env)
     if (output) {
-      logger.log(output)
+      if (config?.logger) {
+        logger.log(output)
+      } else {
+        // using process.stdout instead of console.log because console.log adds an extra newlines
+        // to the end. 
+        process.stdout.write(output)
+      }
     }
   }
 
