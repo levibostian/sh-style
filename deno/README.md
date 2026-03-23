@@ -128,7 +128,14 @@ const log = createLogger({
   logger: {
     log: (msg: string) => {
       // Send to file, network, or any other destination
-      Deno.writeTextFileSync("/var/log/build.log", msg + "\n", { append: true })
+      Deno.writeTextFileSync("/var/log/build.log", msg, { append: true })
+
+      // Important: If you decide to write to stdout, it's suggested to avoid console.log because it adds an extra newline 
+      // at the end of the message, which can cause formatting issues. Instead, use Deno.stdout.write or process.stdout.write 
+      // directly to maintain the intended formatting.
+      const encoder = new TextEncoder();
+      const data = encoder.encode("Hello world");
+      const bytesWritten = await Deno.stdout.write(data); 
     },
   },
 })

@@ -68,11 +68,11 @@ build: ## Build binary for current platform only (faster for local development)
 
 test: build-all ## Run all tests (builds all binaries first)
 	@echo "Running integration tests..."
-	@go test -v .
+	@go test -count=1 -v .
 	@echo ""
 	@echo "Running wrapper tests..."
-	@go test -v ./tests/
+	@go test -count=1 -v ./tests/
 
 test-junit: build-all
 	@mkdir -p reports
-	@gotestsum --junitfile reports/junit.xml -- -v . ./tests/
+	@gotestsum --junitfile reports/junit.xml -- -count=1 -v . ./tests/

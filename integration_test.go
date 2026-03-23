@@ -97,13 +97,13 @@ func TestRenderModeWithJSONL(t *testing.T) {
 		"                             Test Pipeline",
 		"========================================================================",
 		"========================================================================",
-		"",
+		" ",
 		"------------------------------------------------------------------------",
 		"## Build",
 		"------------------------------------------------------------------------",
-		"",
+		" ",
 		"OK: completed",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -112,7 +112,7 @@ func TestRenderModeWithJSONL(t *testing.T) {
 func TestRenderModeEmptyLinesSkipped(t *testing.T) {
 	testJsonl := strings.Join([]string{
 		`{"command":"title","lines":["Test"]}`,
-		"",
+		" ",
 		"   ",
 		`{"command":"ok","lines":["done"]}`,
 	}, "\n")
@@ -125,9 +125,9 @@ func TestRenderModeEmptyLinesSkipped(t *testing.T) {
 		"                                  Test",
 		"========================================================================",
 		"========================================================================",
-		"",
+		" ",
 		"OK: done",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -148,9 +148,9 @@ func TestRenderModeInvalidJSONIgnored(t *testing.T) {
 		"                                 Valid",
 		"========================================================================",
 		"========================================================================",
-		"",
+		" ",
 		"OK: done",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -173,11 +173,11 @@ func TestRenderModeMissingFieldsIgnored(t *testing.T) {
 		"                                 Valid",
 		"========================================================================",
 		"========================================================================",
-		"",
+		" ",
 		"----------",
 		"### Valid Step",
 		"----------",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -198,9 +198,9 @@ func TestRenderModeNonStringLinesIgnored(t *testing.T) {
 		"                                 Valid",
 		"========================================================================",
 		"========================================================================",
-		"",
+		" ",
 		"OK: done",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -221,9 +221,9 @@ func TestRenderModeUnknownCommandIgnored(t *testing.T) {
 		"                                 Valid",
 		"========================================================================",
 		"========================================================================",
-		"",
+		" ",
 		"OK: done",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -237,7 +237,7 @@ func TestRenderModeWarnWithDetails(t *testing.T) {
 		"!!! WARNING: Warning message",
 		"    detail 1",
 		"    detail 2",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -249,7 +249,7 @@ func TestRenderModeWarnWithoutDetails(t *testing.T) {
 
 	expected := strings.Join([]string{
 		"!!! WARNING: Warning message",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -263,7 +263,7 @@ func TestRenderModeKvInvalidPairsSkipped(t *testing.T) {
 		"LABEL:",
 		"  key1: value1",
 		"  key2: value2",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -278,7 +278,7 @@ func TestRenderModeList(t *testing.T) {
 		"  - main.ts",
 		"  - lib.ts",
 		"  - test.ts",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -296,13 +296,13 @@ func TestRenderModeAllLabeledCommands(t *testing.T) {
 
 	expected := strings.Join([]string{
 		"NOTE: Note text",
-		"",
+		" ",
 		"WHY: Why text",
-		"",
+		" ",
 		"PLAN: Plan text",
-		"",
+		" ",
 		"DONE: Done text",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -324,7 +324,7 @@ func TestRenderModeError(t *testing.T) {
 		"| Reason 1                                                             |",
 		"| Reason 2                                                             |",
 		"+----------------------------------------------------------------------+",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -340,7 +340,7 @@ func TestCLITitle(t *testing.T) {
 		"                               Test Title",
 		"========================================================================",
 		"========================================================================",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -352,7 +352,7 @@ func TestCLIPhase(t *testing.T) {
 		"------------------------------------------------------------------------",
 		"## Setup Phase",
 		"------------------------------------------------------------------------",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -364,7 +364,7 @@ func TestCLIStep(t *testing.T) {
 		"----------",
 		"### Install dependencies",
 		"----------",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -377,12 +377,12 @@ func TestCLICmd(t *testing.T) {
 
 func TestCLIOk(t *testing.T) {
 	output := runCommand(t, "ok", "build completed")
-	assertEqual(t, output, "OK: build completed\n\n")
+	assertEqual(t, output, "OK: build completed\n \n")
 }
 
 func TestCLINote(t *testing.T) {
 	output := runCommand(t, "note", "Starting build process")
-	assertEqual(t, output, "NOTE: Starting build process\n\n")
+	assertEqual(t, output, "NOTE: Starting build process\n \n")
 }
 
 func TestCLIWarnWithDetails(t *testing.T) {
@@ -390,7 +390,7 @@ func TestCLIWarnWithDetails(t *testing.T) {
 	expected := strings.Join([]string{
 		"!!! WARNING: tests skipped",
 		"    SKIP_TESTS=1",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -404,7 +404,7 @@ func TestCLIErrorMultipleLines(t *testing.T) {
 		"| Connection timeout                                                   |",
 		"| Retry limit exceeded                                                 |",
 		"+----------------------------------------------------------------------+",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -416,7 +416,7 @@ func TestCLIKv(t *testing.T) {
 		"ENV:",
 		"  node: 20.11.1",
 		"  os: ubuntu-22.04",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -429,7 +429,7 @@ func TestCLIList(t *testing.T) {
 		"  - main.ts",
 		"  - lib.ts",
 		"  - test.ts",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -437,24 +437,24 @@ func TestCLIList(t *testing.T) {
 
 func TestCLIWhy(t *testing.T) {
 	output := runCommand(t, "why", "Need to validate input")
-	assertEqual(t, output, "WHY: Need to validate input\n\n")
+	assertEqual(t, output, "WHY: Need to validate input\n \n")
 }
 
 func TestCLIPlan(t *testing.T) {
 	output := runCommand(t, "plan", "Deploy to staging first")
-	assertEqual(t, output, "PLAN: Deploy to staging first\n\n")
+	assertEqual(t, output, "PLAN: Deploy to staging first\n \n")
 }
 
 func TestCLIDone(t *testing.T) {
 	output := runCommand(t, "done", "Migration completed")
-	assertEqual(t, output, "DONE: Migration completed\n\n")
+	assertEqual(t, output, "DONE: Migration completed\n \n")
 }
 
 func TestCLIWarnWithoutDetails(t *testing.T) {
 	output := runCommand(t, "warn", "Deprecation warning")
 	expected := strings.Join([]string{
 		"!!! WARNING: Deprecation warning",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -466,7 +466,7 @@ func TestCLIWarnMultipleDetails(t *testing.T) {
 		"!!! WARNING: Configuration issues",
 		"    Missing API key",
 		"    Invalid timeout",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -478,7 +478,7 @@ func TestCLIErrorSingleLine(t *testing.T) {
 		"+----------------------------------------------------------------------+",
 		"| ERROR: Build failed                                                  |",
 		"+----------------------------------------------------------------------+",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -489,7 +489,7 @@ func TestCLIKvEmptyValue(t *testing.T) {
 	expected := strings.Join([]string{
 		"CONFIG:",
 		"  key: ",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -500,7 +500,7 @@ func TestCLIKvValueContainingEquals(t *testing.T) {
 	expected := strings.Join([]string{
 		"VARS:",
 		"  equation: x=y+1",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -508,7 +508,7 @@ func TestCLIKvValueContainingEquals(t *testing.T) {
 
 func TestCLIListNoItems(t *testing.T) {
 	output := runCommand(t, "list", "EMPTY")
-	assertEqual(t, output, "EMPTY:\n\n")
+	assertEqual(t, output, "EMPTY:\n \n")
 }
 
 func TestCLIListSingleItem(t *testing.T) {
@@ -516,7 +516,7 @@ func TestCLIListSingleItem(t *testing.T) {
 	expected := strings.Join([]string{
 		"SINGLE:",
 		"  - item.txt",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)
@@ -634,18 +634,18 @@ func TestCLIListWithoutLabel(t *testing.T) {
 
 func TestCLIMsg(t *testing.T) {
 	output := runCommand(t, "msg", "Hello, world!")
-	assertEqual(t, output, "Hello, world!\n\n")
+	assertEqual(t, output, "Hello, world!\n \n")
 }
 
 func TestCLIMsgMultiWord(t *testing.T) {
 	output := runCommand(t, "msg", "This", "is", "a", "plain", "message.")
-	assertEqual(t, output, "This is a plain message.\n\n")
+	assertEqual(t, output, "This is a plain message.\n \n")
 }
 
 func TestRenderModeMsg(t *testing.T) {
 	testJsonl := `{"command":"msg","lines":["Plain paragraph text."]}`
 	output := runRender(t, testJsonl)
-	assertEqual(t, output, "Plain paragraph text.\n\n")
+	assertEqual(t, output, "Plain paragraph text.\n \n")
 }
 
 func TestRenderModeMsgWraps(t *testing.T) {
@@ -655,7 +655,7 @@ func TestRenderModeMsgWraps(t *testing.T) {
 	expected := strings.Join([]string{
 		"This is a fairly long plain message that should wrap because it exceeds",
 		"the configured width of seventy-two characters.",
-		"",
+		" ",
 		"",
 	}, "\n")
 	assertEqual(t, output, expected)

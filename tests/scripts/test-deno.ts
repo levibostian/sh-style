@@ -20,7 +20,9 @@ import {
 
 // Run all commands in sequence to generate the expected output
 title("RELEASE PIPELINE — payments-api — nightly with extended validation steps")
-msg("This pipeline will build, test, and deploy the payments-api service.")
+msg(`This pipeline will build, test, and deploy the payments-api service.
+
+(this line is intentionally here to test that empty lines are preserved in the output and that the spacing is exactly as expected.)`)
 note("Build the service, run tests, and publish artifacts for deployment while preserving exact spacing  and avoiding     truncation.")
 phase("Setup")
 why("Ensure deterministic tooling across runners and capture enough context for reproducible failures.")

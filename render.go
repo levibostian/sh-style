@@ -16,7 +16,7 @@ func RenderTitle(text string, width int) string {
 	}
 	parts = append(parts, Rule("=", width))
 	parts = append(parts, Rule("=", width))
-	return strings.Join(parts, "\n") + "\n\n"
+	return normalizeSpacerLines(strings.Join(parts, "\n") + "\n\n")
 }
 
 // RenderPhase renders a phase header with dash rules.
@@ -26,7 +26,7 @@ func RenderPhase(text string, width int) string {
 	parts = append(parts, Rule("-", width))
 	parts = append(parts, wrapped...)
 	parts = append(parts, Rule("-", width))
-	return strings.Join(parts, "\n") + "\n\n"
+	return normalizeSpacerLines(strings.Join(parts, "\n") + "\n\n")
 }
 
 // RenderStep renders a step header with short dash rules.
@@ -36,7 +36,7 @@ func RenderStep(text string, width int) string {
 	parts = append(parts, "----------")
 	parts = append(parts, wrapped...)
 	parts = append(parts, "----------")
-	return strings.Join(parts, "\n") + "\n\n"
+	return normalizeSpacerLines(strings.Join(parts, "\n") + "\n\n")
 }
 
 // RenderLabeled renders a labeled line (NOTE:, WHY:, PLAN:, OK:, DONE:).
@@ -44,13 +44,13 @@ func RenderLabeled(label string, text string, width int) string {
 	prefix := label + ": "
 	contPrefix := strings.Repeat(" ", len(prefix))
 	wrapped := wrapWithPrefix(text, prefix, contPrefix, width)
-	return strings.Join(wrapped, "\n") + "\n\n"
+	return normalizeSpacerLines(strings.Join(wrapped, "\n") + "\n\n")
 }
 
 // RenderCmd renders a command line with $ prefix.
 func RenderCmd(text string, width int) string {
 	wrapped := wrapWithPrefix(text, "  $ ", "    ", width)
-	return strings.Join(wrapped, "\n") + "\n"
+	return normalizeSpacerLines(strings.Join(wrapped, "\n") + "\n")
 }
 
 // RenderWarn renders a warning with optional detail lines.
@@ -66,7 +66,7 @@ func RenderWarn(text string, details []string, width int) string {
 		}
 	}
 
-	return strings.Join(wrapped, "\n") + "\n\n"
+	return normalizeSpacerLines(strings.Join(wrapped, "\n") + "\n\n")
 }
 
 // RenderError renders error lines in a box.
@@ -94,7 +94,7 @@ func RenderError(lines []string, width int) string {
 	}
 
 	boxLines = append(boxLines, topBottom)
-	return strings.Join(boxLines, "\n") + "\n\n"
+	return normalizeSpacerLines(strings.Join(boxLines, "\n") + "\n\n")
 }
 
 // RenderKv renders key-value pairs under a label.
@@ -109,7 +109,7 @@ func RenderKv(label string, entries [][2]string, width int) string {
 		parts = append(parts, wrapped...)
 	}
 
-	return strings.Join(parts, "\n") + "\n\n"
+	return normalizeSpacerLines(strings.Join(parts, "\n") + "\n\n")
 }
 
 // RenderList renders a list of items under a label.
@@ -122,13 +122,13 @@ func RenderList(label string, items []string, width int) string {
 		parts = append(parts, wrapped...)
 	}
 
-	return strings.Join(parts, "\n") + "\n\n"
+	return normalizeSpacerLines(strings.Join(parts, "\n") + "\n\n")
 }
 
 // RenderMsg renders plain text wrapped to width, with no prefix.
 func RenderMsg(text string, width int) string {
 	lines, _ := WrapPreserve(text, width)
-	return strings.Join(lines, "\n") + "\n\n"
+	return normalizeSpacerLines(strings.Join(lines, "\n") + "\n\n")
 }
 
 // wrapWithPrefix wraps text with a first-line prefix and continuation prefix.
@@ -166,4 +166,16 @@ func wrapWithPrefix(text string, firstPrefix string, contPrefix string, width in
 	}
 
 	return result
+}
+
+// Meant to be called in *all* render functions. This function fixes a weird 
+// visual issue so far only found on GitHub Actions. When you run this tool there, 
+// any intentional empty lines (created by \n\n) are not visible in the web UI. 
+// but as soon as you refresh the webpage, they are visible. This is a workaround 
+// to make them visible immediately without needing a refresh.
+func normalizeSpacerLines(output string) string {
+	for strings.Contains(output, "\n\n") {
+		output = strings.ReplaceAll(output, "\n\n", "\n \n")
+	}
+	return output
 }
