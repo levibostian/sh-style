@@ -15,7 +15,7 @@ Guidance for coding agents working in this repository.
   This produces all the necessary artifacts for the local environment. 
 - Build all binaries: `make build-all`
   Similar to `make build` but produces all artifacts for all platforms. 
-- Full tests: `IS_AGENT=true make test`
+- Full tests: `make test`
   This runs the full test suite, including root and wrapper tests, with a clean cache.
 
 ## Testing and Golden Files

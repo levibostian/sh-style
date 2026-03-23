@@ -18,6 +18,9 @@ jobs:
       run: |
         make test-junit
 
+    - name: Run CLI to see how it's going to look like
+      run: ./tests/scripts/test-cli.sh
+
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
