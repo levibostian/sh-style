@@ -1,0 +1,56 @@
+name: Update Deno Lock File
+
+on:
+  pull_request:
+    branches: [main] # PRs that target the main branch
+    paths: # only run if these files are changed
+      - deno/deno.jsonc?'
+
+jobs:
+  update-lockfile:
+    # Only run on PRs from branches with 'renovate/' prefix in the same repository (not forks)
+    if: github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'renovate/')    
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # required to commit and push lock file changes        
+    steps:
+      # Workaround to trigger github actions on pull request that we push commits to. 
+      # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs 
+      - uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
+        id: generate-token
+        with:
+          app-id: ${{ secrets.CREATE_GH_TOKEN_APP_ID }}
+          private-key: ${{ secrets.CREATE_GH_TOKEN_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Checkout the PR branch
+          ref: ${{ github.head_ref }}
+          token: ${{ steps.generate-token.outputs.token }}
+      
+      - name: Setup Deno
+        uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4
+            
+      - name: Update Deno lock file in deno/
+        run: deno install --frozen=false
+        working-directory: deno
+      
+      - name: Check if lock file changed
+        id: check-changes
+        run: |
+          if git diff --quiet deno/deno.lock; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No changes to lock files"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Lock file(s) have been updated"
+          fi
+
+      - name: Commit and push changes
+        if: steps.check-changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add deno/deno.lock
+          git commit -m "chore: update deno.lock files"
+          git push
