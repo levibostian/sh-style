@@ -19,9 +19,7 @@ A well-formed program should generally follow this structure:
 
 ```txt
 ========================================================================
-========================================================================
                      RELEASE PIPELINE — payments-api
-========================================================================
 ========================================================================
 
 NOTE: Build the service, run tests, and publish artifacts for deployment.
@@ -157,9 +155,7 @@ go build -o log .
 
 ```
 ========================================================================
-========================================================================
                               Hello World
-========================================================================
 ========================================================================
 ```
 
@@ -173,7 +169,7 @@ The `log` CLI supports two modes:
 #### Headers
 
 ```bash
-log title <text...>      # Document title (centered, double rules)
+log title <text...>      # Document title (centered, single rules)
 log phase <text...>      # H1 section (full-width rules)
 log step <text...>       # H2 subsection (short rules)
 ```
@@ -396,7 +392,7 @@ shstyle.PhaseWithWidth("Narrow output", 50)
 #### Headers
 
 ```go
-logger.Title(text string)      // Document title (centered, double rules)
+logger.Title(text string)      // Document title (centered, single rules)
 logger.Phase(text string)      // H1 section (full-width rules)
 logger.Step(text string)       // H2 subsection (short rules)
 ```
