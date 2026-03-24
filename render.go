@@ -10,11 +10,9 @@ func RenderTitle(text string, width int) string {
 	lines, _ := WrapPreserve(text, width)
 	var parts []string
 	parts = append(parts, Rule("=", width))
-	parts = append(parts, Rule("=", width))
 	for _, line := range lines {
 		parts = append(parts, CenterLine(line, width))
 	}
-	parts = append(parts, Rule("=", width))
 	parts = append(parts, Rule("=", width))
 	return normalizeSpacerLines(strings.Join(parts, "\n") + "\n\n")
 }
