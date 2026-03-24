@@ -12,12 +12,12 @@ jobs:
       pull-requests: write # If you enable pull request comments (they are enabled by default).
       id-token: write # required by jsr and npm for publishing package 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Set up tools
-        uses: jdx/mise-action@v3
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
       
-      - uses: levibostian/decaf@0.11.1
+      - uses: levibostian/decaf@7108899cad610b50af8d690ca7cbe442ad627873 # 0.11.1
         env:
           # required to use 'gh' CLI in my step scripts. 
           GH_TOKEN: ${{ github.token }}      
