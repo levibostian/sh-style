@@ -2,15 +2,15 @@
   "version": "5",
   "specifiers": {
     "jsr:@cross/deepmerge@1": "1.0.1",
-    "jsr:@cross/env@^1.0.3": "1.0.3",
+    "jsr:@cross/env@^1.0.3": "1.0.5",
     "jsr:@cross/runtime@1": "1.2.1"
   },
   "jsr": {
     "@cross/deepmerge@1.0.1": {
       "integrity": "7a224229f1a463087d62cef8729d26263ed4f5e3c2f2bfec64fc0a16a9dbc754"
     },
-    "@cross/env@1.0.3": {
-      "integrity": "218d2dd68bec55cf047d1670a8bddc304b9c011a8ad22e647afa916bb796c8b4",
+    "@cross/env@1.0.5": {
+      "integrity": "7690e408079ac0a50b0d5f603d3b0684b4e8bb4cf1c924d9183030218c7c396e",
       "dependencies": [
         "jsr:@cross/deepmerge",
         "jsr:@cross/runtime"
